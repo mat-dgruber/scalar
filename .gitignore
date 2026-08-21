@@ -35,3 +35,12 @@ rollup.config-*.mjs
 
 .idea
 **/.claude/settings.local.json
+
+# Superpowers, Agents, and Knowledge Graph
+.superpowers/
+.gemini/
+.agents/
+.ai-jail
+.remember/
+graphify-out/
+

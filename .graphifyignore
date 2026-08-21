@@ -1,0 +1,51 @@
+# Graphify Ignore Rules for Scalar Monorepo
+# Keep the Knowledge Graph clean, concise, and focused on source architecture
+
+# Node & Package Managers
+node_modules/
+**/node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build Artefacts & Compilations
+dist/
+**/dist/
+build/
+**/build/
+.turbo/
+**/tsconfig.tsbuildinfo
+.tsbuildinfo
+
+# Test Outputs & Coverage
+coverage/
+**/coverage/
+htmlcov/
+playwright-report/
+test-results/
+.nyc_output/
+
+# Agents, Superpowers & Scratch
+.agents/
+.claude/
+.gemini/
+.openclaude/
+.remember/
+.superpowers/
+.ai-jail
+graphify-out/
+docs/ai/
+docs/ai/chats/
+docs/ai/plans/
+docs/superpowers/
+
+
+# Git & Changesets
+.git/
+.changeset/
+
+# OS and Temporary Files
+.DS_Store
+*.log
+*.tmp
