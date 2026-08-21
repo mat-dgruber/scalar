@@ -698,4 +698,41 @@ describe('resolveReferences', () => {
     const { schema } = resolveReferences(filesystem)
     expect(schema.paths['/foobar'].post.requestBody.content['application/json'].schema.example).toBe('foobar')
   })
+
+  it('resolves references in-place without cloning when clone option is false', () => {
+    const specification: any = {
+      openapi: '3.1.0',
+      info: { title: 'Test Spec', version: '1.0.0' },
+      paths: {
+        '/items': {
+          get: {
+            responses: {
+              '200': {
+                description: 'success',
+                content: {
+                  'application/json': {
+                    schema: { $ref: '#/components/schemas/Item' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      components: {
+        schemas: {
+          Item: {
+            type: 'object',
+            properties: { id: { type: 'number' } },
+          },
+        },
+      },
+    }
+
+    const { schema, valid } = resolveReferences(specification, { clone: false })
+    expect(valid).toBe(true)
+    expect(schema.paths['/items'].get.responses['200'].content['application/json'].schema.type).toBe('object')
+    // Verification that input was modified in-place
+    expect(specification.paths['/items'].get.responses['200'].content['application/json'].schema.type).toBe('object')
+  })
 })

@@ -32,6 +32,12 @@ type ResolveReferencesResult = {
 
 export type ResolveReferencesOptions = ThrowOnErrorOption & {
   /**
+   * Whether to clone the input before resolving references.
+   * Defaults to true to avoid mutating input objects.
+   * Set to false for maximum performance and reduced memory overhead on massive OpenAPI specifications.
+   */
+  clone?: boolean
+  /**
    * Fired when dereferenced a schema.
    *
    * Note that for object schemas, its properties may not be dereferenced when the hook is called.
@@ -52,11 +58,12 @@ export function resolveReferences(
   // Errors that occurred during the process
   errors: ErrorObject[] = [],
 ): ResolveReferencesResult {
-  // Detach from input
-  const clonedInput = structuredClone(input)
+  // Detach from input only if cloning is enabled (default: true)
+  const shouldClone = options?.clone ?? true
+  const effectiveInput = shouldClone ? structuredClone(input) : input
 
   // Make it a filesystem, even if it's just one file
-  const filesystem = makeFilesystem(clonedInput)
+  const filesystem = makeFilesystem(effectiveInput)
 
   // Get the main file
   const entrypoint = getEntrypoint(filesystem)

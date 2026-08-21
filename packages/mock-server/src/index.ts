@@ -4,6 +4,7 @@ export {
   createAsyncApiMockServer,
 } from './create-asyncapi-mock-server'
 export { createMockServer } from './create-mock-server'
+export { type McpTool, createMcpHandler, extractMcpTools } from './mcp/create-mcp-handler'
 export { defaultTransports, sseTransport, websocketTransport } from './transports'
 export type {
   MessageDirection,

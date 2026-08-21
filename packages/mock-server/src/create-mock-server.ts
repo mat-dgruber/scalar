@@ -16,6 +16,7 @@ import { setUpAuthenticationRoutes } from '@/utils/set-up-authentication-routes'
 import { validateRequest } from '@/utils/validate-request'
 
 import { store } from './libs/store'
+import { createMcpHandler } from './mcp/create-mcp-handler'
 import { mockAnyResponse } from './routes/mock-any-response'
 import { mockHandlerResponse } from './routes/mock-handler-response'
 import { respondWithOpenApiDocument } from './routes/respond-with-openapi-document'
@@ -118,6 +119,20 @@ export async function createMockServer(configuration: MockServerOptions): Promis
       }
     })
   })
+
+  // Native MCP (Model Context Protocol) JSON-RPC endpoint
+  const mcpHandler = createMcpHandler(app, schema)
+  app.post('/mcp', mcpHandler)
+  app.get('/mcp', (c) =>
+    c.json({
+      name: 'scalar-mcp-server',
+      version: '1.0.0',
+      description: 'Scalar OpenAPI Native Model Context Protocol (MCP) Server',
+      endpoints: {
+        jsonrpc: 'POST /mcp',
+      },
+    }),
+  )
 
   // OpenAPI JSON file
   app.get('/openapi.json', (c) =>

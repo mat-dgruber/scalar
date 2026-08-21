@@ -35,6 +35,60 @@ export interface GeminiChatTransportOptions {
   systemInstruction?: string | (() => string | undefined)
   tools?: Record<string, any> | any[] | (() => Record<string, any> | any[] | undefined)
   fetch?: typeof fetch
+  maxRetries?: number | (() => number | undefined)
+  retryDelayMs?: number | (() => number | undefined)
+  maxPayloadSizeBytes?: number | (() => number | undefined)
+}
+
+export const DEFAULT_MAX_PAYLOAD_SIZE = 50 * 1024 // 50 KB
+
+/**
+ * Truncate massive tool response outputs to prevent token exhaustion and context window overflows
+ */
+export function sanitizeToolOutput(output: any, maxBytes = DEFAULT_MAX_PAYLOAD_SIZE): any {
+  if (output === null || output === undefined) {
+    return output
+  }
+
+  if (typeof output === 'string') {
+    if (output.length > maxBytes) {
+      return `${output.slice(0, maxBytes)}\n... [Truncated: output exceeded ${Math.round(maxBytes / 1024)}KB context limit]`
+    }
+    return output
+  }
+
+  try {
+    const serialized = JSON.stringify(output)
+    if (serialized && serialized.length > maxBytes) {
+      if (typeof output === 'object' && !Array.isArray(output)) {
+        const truncatedObj: Record<string, any> = { ...output }
+        if (truncatedObj.responseBody !== undefined) {
+          const bodyStr =
+            typeof truncatedObj.responseBody === 'string'
+              ? truncatedObj.responseBody
+              : JSON.stringify(truncatedObj.responseBody)
+          truncatedObj.responseBody = `${bodyStr.slice(0, Math.min(maxBytes, 4000))}\n... [Truncated: responseBody exceeded context limit]`
+        } else if (truncatedObj.data !== undefined) {
+          const dataStr = typeof truncatedObj.data === 'string' ? truncatedObj.data : JSON.stringify(truncatedObj.data)
+          truncatedObj.data = `${dataStr.slice(0, Math.min(maxBytes, 4000))}\n... [Truncated: data exceeded context limit]`
+        } else {
+          return {
+            _warning: `Payload truncated because size (${serialized.length} bytes) exceeded ${maxBytes} bytes limit`,
+            summary: `${serialized.slice(0, maxBytes)}...`,
+          }
+        }
+        return truncatedObj
+      }
+      return {
+        _warning: `Payload truncated because size (${serialized.length} bytes) exceeded ${maxBytes} bytes limit`,
+        summary: `${serialized.slice(0, maxBytes)}...`,
+      }
+    }
+  } catch {
+    // If serialization fails, pass through
+  }
+
+  return output
 }
 
 export function sanitizeToolName(name: string): string {
@@ -135,8 +189,9 @@ export function convertMessagesToGemini(messages: UIMessage<any, any, any>[]): G
               },
             })
 
-            const output = (part as any).output ?? (part as any).result ?? (part as any).toolInvocation?.result
-            if (output !== undefined) {
+            const rawOutput = (part as any).output ?? (part as any).result ?? (part as any).toolInvocation?.result
+            if (rawOutput !== undefined) {
+              const output = sanitizeToolOutput(rawOutput)
               toolResponseParts.push({
                 functionResponse: {
                   name: sanitizedName,
@@ -194,6 +249,8 @@ export class GeminiChatTransport implements ChatTransport<UIMessage<any, any, an
     const rawBaseUrl = this.resolveOption(this.options.baseUrl) || 'https://generativelanguage.googleapis.com'
     const rawSystemInstruction = this.resolveOption(this.options.systemInstruction)
     const rawTools = this.resolveOption(this.options.tools)
+    const maxRetries = Math.max(0, this.resolveOption(this.options.maxRetries) ?? 3)
+    const baseRetryDelay = Math.max(50, this.resolveOption(this.options.retryDelayMs) ?? 1000)
     const fetchFn = this.options.fetch ?? fetch
 
     const baseUrl = rawBaseUrl.replace(/\/+$/, '')
@@ -227,12 +284,53 @@ export class GeminiChatTransport implements ChatTransport<UIMessage<any, any, an
       ...(options.headers as Record<string, string>),
     }
 
-    const response = await fetchFn(endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-      signal: options.abortSignal,
-    })
+    const isRetryable = (status: number) => {
+      return status === 429 || status === 500 || status === 502 || status === 503 || status === 504
+    }
+
+    let response: Response | undefined
+    let lastNetworkError: any
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (options.abortSignal?.aborted) {
+          break
+        }
+
+        response = await fetchFn(endpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          signal: options.abortSignal,
+        })
+
+        if (response.ok || !isRetryable(response.status) || attempt === maxRetries) {
+          break
+        }
+
+        const jitter = Math.random() * 100
+        const delay = baseRetryDelay * Math.pow(2, attempt) + jitter
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      } catch (err: any) {
+        lastNetworkError = err
+        if (options.abortSignal?.aborted || attempt === maxRetries) {
+          break
+        }
+        const jitter = Math.random() * 100
+        const delay = baseRetryDelay * Math.pow(2, attempt) + jitter
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+    }
+
+    if (!response) {
+      const errorMsg = lastNetworkError?.message || 'Network request failed after retries'
+      return new ReadableStream<UIMessageChunk>({
+        start(controller) {
+          controller.enqueue({ type: 'error', errorText: `Gemini API network error: ${errorMsg}` })
+          controller.close()
+        },
+      })
+    }
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown network error')

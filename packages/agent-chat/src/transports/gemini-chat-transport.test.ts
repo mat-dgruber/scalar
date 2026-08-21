@@ -318,4 +318,94 @@ describe('GeminiChatTransport', () => {
       parts: [{ text: 'You are a helpful API assistant.' }],
     })
   })
+
+  it('retries automatically on 429 Too Many Requests and succeeds on subsequent attempt', async () => {
+    let callCount = 0
+    const mockFetch = vi.fn().mockImplementation(() => {
+      callCount++
+      if (callCount === 1) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: { code: 429, message: 'Resource exhausted' } }), {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        )
+      }
+      return Promise.resolve(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  'data: {"candidates":[{"content":{"parts":[{"text":"Success after retry"}]}}]}\n\n',
+                ),
+              )
+              controller.close()
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+        ),
+      )
+    })
+
+    const transport = new GeminiChatTransport({
+      apiKey: 'test-key',
+      fetch: mockFetch,
+      maxRetries: 2,
+      retryDelayMs: 10,
+    })
+
+    const stream = await transport.sendMessages({
+      trigger: 'submit-message',
+      chatId: 'test-chat',
+      messageId: undefined,
+      abortSignal: undefined,
+      messages: [{ id: '1', role: 'user', parts: [{ type: 'text', text: 'hello' }] } as any],
+    })
+
+    const reader = stream.getReader()
+    const chunks: any[] = []
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      chunks.push(value)
+    }
+
+    expect(callCount).toBe(2)
+    const textChunk = chunks.find((c) => c.type === 'text-delta')
+    expect(textChunk?.delta).toBe('Success after retry')
+  })
+
+  it('truncates massive tool outputs to avoid token limit issues', () => {
+    const hugeString = 'x'.repeat(100 * 1024) // 100 KB
+    const messages = [
+      { id: '1', role: 'user', parts: [{ type: 'text', text: 'Fetch large data' }] },
+      {
+        id: '2',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-execute-request',
+            toolCallId: 'call_huge',
+            toolName: 'execute-request',
+            input: { method: 'GET', path: '/huge-data' },
+            output: {
+              status: 200,
+              responseBody: hugeString,
+            },
+          },
+        ],
+      },
+    ]
+
+    const contents = convertMessagesToGemini(messages as any)
+    const toolResponseContent = contents.find((c) => c.parts.some((p) => p.functionResponse))
+    const responseOutput = toolResponseContent?.parts[0]?.functionResponse?.response?.output
+    expect(responseOutput).toBeDefined()
+    expect(responseOutput.responseBody).toContain('[Truncated: responseBody exceeded context limit]')
+    expect(responseOutput.responseBody.length).toBeLessThan(10000)
+  })
 })
