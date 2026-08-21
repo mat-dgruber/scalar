@@ -16,6 +16,8 @@ Data       | Autor          | Descrição da Alteração
 2026-08-21 | Matheus Diniz  | Atualização v2.1.0: Instalação e inicialização direta do
            | (Antigravity)  | Fork Customizado (@mat-dgruber/scalar) nos projetos com
            |                | suporte nativo a Google Gemini (BYOK / Model Selector).
+2026-08-21 | Matheus Diniz  | Atualização v2.2.0: Adicionado guia de autenticação GitHub
+           | (Antigravity)  | PAT para consumo dos pacotes @mat-dgruber pela equipe.
 =================================================================================
 -->
 
@@ -29,23 +31,46 @@ Data       | Autor          | Descrição da Alteração
 
 Utilizamos a versão do fork `@mat-dgruber/scalar` para garantir suporte a IA com Google Gemini, correções de schema e performance.
 
+> **Os pacotes estão publicados no GitHub Packages** e exigem autenticação. Cada membro da equipe precisa gerar um **GitHub Personal Access Token (PAT)** uma vez na sua máquina.
+
+---
+
+### 🔑 Pré-requisito: Configurar Autenticação GitHub Packages
+
+Esse passo é feito **uma única vez por máquina** e serve para todos os projetos.
+
+**1. Gerar o token:**
+- Acesse: [github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens/new)
+- Marque **apenas**: ✅ `read:packages`
+- Defina uma expiração (ex: 1 ano)
+- Copie o token gerado (`ghp_...`)
+
+**2. Configurar globalmente no npm (substitua `ghp_SEU_TOKEN` pelo seu token):**
+```bash
+npm config set //npm.pkg.github.com/:_authToken ghp_SEU_TOKEN
+npm config set @mat-dgruber:registry https://npm.pkg.github.com
+```
+
+Pronto. Não é necessário mais nenhuma configuração por projeto.
+
+> **Para CI/CD** (GitHub Actions, Jenkins, etc.), use a variável de ambiente `NODE_AUTH_TOKEN` no `.npmrc`:
+> ```ini
+> @mat-dgruber:registry=https://npm.pkg.github.com
+> //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+> ```
+
+---
+
 ### A. Instalação em Projetos Node / Vue / React / Next.js / NestJS
 
-1. **Configurar o `.npmrc` na raiz do seu projeto consumidor:**
-   ```ini
-   @mat-dgruber:registry=https://npm.pkg.github.com
-   # Se o repositório for privado, adicione o token:
-   # //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-   ```
-
-2. **Instalar o pacote:**
+1. **Instalar o pacote** (após configurar o PAT acima):
    ```bash
    pnpm add @mat-dgruber/api-reference
    # ou com npm / yarn:
    npm install @mat-dgruber/api-reference
    ```
 
-3. **Inicializar no seu código com Google Gemini:**
+2. **Inicializar no seu código com Google Gemini:**
 
    ```typescript
    import { createApiReference } from '@mat-dgruber/api-reference'
