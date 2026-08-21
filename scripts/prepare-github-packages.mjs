@@ -50,7 +50,48 @@ for (const pkgPath of packageJsonPaths) {
 
 console.log(`[scope-replacer] Found ${modifiedPackages.size} packages to rename.`)
 
-// Now transform package.json files
+// ─── Patch pnpm-workspace.yaml catalog ────────────────────────────────────────
+// The catalog may have entries like '@scalar/typebox: 0.1.3'. After we rename
+// dependencies in package.json files to '@mat-dgruber/typebox', pnpm can no
+// longer resolve 'catalog:*' because the key doesn't exist. We fix this by
+// duplicating every '@scalar/*' catalog entry under the renamed key.
+const workspaceYamlPath = 'pnpm-workspace.yaml'
+if (existsSync(workspaceYamlPath)) {
+  let yaml = readFileSync(workspaceYamlPath, 'utf8')
+
+  // Find all '@scalar/<name>: <version>' lines and add a renamed twin next to them
+  const catalogRegex = /^(\s+)'(@scalar\/[^']+)'(:[ \t]+.+)$/gm
+  const catalogAltRegex = /^(\s+)"(@scalar\/[^"]+)"(:[ \t]+.+)$/gm
+  const bareRegex = /^(\s+)(@scalar\/[^\s:]+)(:[ \t]+.+)$/gm
+
+  const replacer = (_, indent, pkg, rest) => {
+    const renamed = pkg.replace(SOURCE_SCOPE, TARGET_SCOPE)
+    // Only add the twin if it doesn't already exist
+    const twinPattern = renamed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (!new RegExp(twinPattern).test(yaml)) {
+      return `${indent}${pkg}${rest}\n${indent}${renamed}${rest}`
+    }
+    return `${indent}${pkg}${rest}`
+  }
+
+  const replacerQuoted = (quote) => (_, indent, pkg, rest) => {
+    const renamed = pkg.replace(SOURCE_SCOPE, TARGET_SCOPE)
+    const twinPattern = renamed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (!new RegExp(twinPattern).test(yaml)) {
+      return `${indent}${quote}${pkg}${quote}${rest}\n${indent}${quote}${renamed}${quote}${rest}`
+    }
+    return `${indent}${quote}${pkg}${quote}${rest}`
+  }
+
+  yaml = yaml.replace(catalogRegex, replacerQuoted("'"))
+  yaml = yaml.replace(catalogAltRegex, replacerQuoted('"'))
+  yaml = yaml.replace(bareRegex, replacer)
+
+  writeFileSync(workspaceYamlPath, yaml, 'utf8')
+  console.log(`[scope-replacer] Patched catalog in ${workspaceYamlPath}`)
+}
+
+// ─── Transform package.json files ─────────────────────────────────────────────
 for (const pkgPath of packageJsonPaths) {
   try {
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
