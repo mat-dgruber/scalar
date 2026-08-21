@@ -29,6 +29,7 @@ const themeIds: ThemeId[] = [
   'deepSpace',
   'harpia',
   'cinematicNoir',
+  'ccat',
 ]
 
 async function fetchExampleSpecification() {

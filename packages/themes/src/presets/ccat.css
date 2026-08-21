@@ -1,0 +1,76 @@
+/* CCAT / monFinTrack - Organic Editorial Theme */
+.light-mode {
+  --scalar-background-1: #fff8f5;
+  --scalar-background-2: #fff1ea;
+  --scalar-background-3: #ffeade;
+
+  --scalar-color-1: #2b1607;
+  --scalar-color-2: #593e2b;
+  --scalar-color-3: #707979;
+
+  --scalar-color-accent: #366365;
+  --scalar-background-accent: #36636518;
+
+  --scalar-border-color: #e8ded6;
+}
+
+.dark-mode {
+  --scalar-background-1: #171310;
+  --scalar-background-2: #201a16;
+  --scalar-background-3: #2b2420;
+
+  --scalar-color-1: #ffede4;
+  --scalar-color-2: #e2d1c6;
+  --scalar-color-3: #a89b91;
+
+  --scalar-color-accent: #a0cfd1;
+  --scalar-background-accent: #a0cfd11f;
+
+  --scalar-border-color: #3d332c;
+}
+
+/* Document Sidebar */
+.light-mode .t-doc__sidebar,
+.dark-mode .t-doc__sidebar {
+  --scalar-sidebar-background-1: var(--scalar-background-1);
+  --scalar-sidebar-color-1: var(--scalar-color-1);
+  --scalar-sidebar-color-2: var(--scalar-color-2);
+  --scalar-sidebar-border-color: var(--scalar-border-color);
+
+  --scalar-sidebar-item-hover-color: currentColor;
+  --scalar-sidebar-item-hover-background: var(--scalar-background-3);
+
+  --scalar-sidebar-item-active-background: var(--scalar-background-accent);
+  --scalar-sidebar-color-active: var(--scalar-color-accent);
+
+  --scalar-sidebar-search-background: var(--scalar-background-2);
+  --scalar-sidebar-search-color: var(--scalar-color-3);
+  --scalar-sidebar-search-border-color: var(--scalar-border-color);
+}
+
+/* Advanced / Functional Colors */
+.light-mode {
+  --scalar-color-green: #2d7a5b;
+  --scalar-color-red: #ba1a1a;
+  --scalar-color-yellow: #a76500;
+  --scalar-color-blue: #366365;
+  --scalar-color-orange: #9c4323;
+  --scalar-color-purple: #75446e;
+
+  --scalar-button-1: #366365;
+  --scalar-button-1-hover: #2b4e50;
+  --scalar-button-1-color: #ffffff;
+}
+
+.dark-mode {
+  --scalar-color-green: #62c395;
+  --scalar-color-red: #ff897d;
+  --scalar-color-yellow: #ffb86a;
+  --scalar-color-blue: #a0cfd1;
+  --scalar-color-orange: #ffb59d;
+  --scalar-color-purple: #dca8d5;
+
+  --scalar-button-1: #a0cfd1;
+  --scalar-button-1-hover: #bcebed;
+  --scalar-button-1-color: #002021;
+}

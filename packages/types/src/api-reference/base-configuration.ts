@@ -164,6 +164,7 @@ export const baseConfigurationSchema = z.object({
       'laserwave',
       'harpia',
       'cinematicNoir',
+      'ccat',
       'none',
     ])
     .optional()

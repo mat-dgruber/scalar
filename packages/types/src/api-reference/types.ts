@@ -328,6 +328,7 @@ export type BaseConfiguration = {
     | 'laserwave'
     | 'harpia'
     | 'cinematicNoir'
+    | 'ccat'
     | 'none'
   /** Integration type identifier */
   _integration?:

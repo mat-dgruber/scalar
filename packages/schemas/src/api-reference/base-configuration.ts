@@ -132,6 +132,7 @@ export const baseConfigurationSchema = object({
       literal('laserwave'),
       literal('harpia'),
       literal('cinematicNoir'),
+      literal('ccat'),
       literal('none'),
     ],
     {

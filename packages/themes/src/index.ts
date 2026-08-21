@@ -1,6 +1,7 @@
 import defaultFonts from './fonts/fonts.css?inline'
 import alternateTheme from './presets/alternate.css?inline'
 import bluePlanetTheme from './presets/bluePlanet.css?inline'
+import ccatTheme from './presets/ccat.css?inline'
 import cinematicNoirTheme from './presets/cinematicNoir.css?inline'
 import customThemeStarter from './presets/custom-theme-starter.css?inline'
 import deepSpaceTheme from './presets/deepSpace.css?inline'
@@ -24,6 +25,7 @@ import { nanoid } from 'nanoid'
 export {
   alternateTheme,
   bluePlanetTheme,
+  ccatTheme,
   cinematicNoirTheme,
   deepSpaceTheme,
   defaultTheme,
@@ -76,6 +78,7 @@ export const themeIds = [
   'laserwave',
   'harpia',
   'cinematicNoir',
+  'ccat',
   'none',
 ] as const
 
@@ -100,6 +103,7 @@ export const themeLabels = {
   laserwave: 'Laserwave',
   harpia: 'Harpia (Amazon Forest & Gold)',
   cinematicNoir: 'Cinematic Noir (Studio Violet)',
+  ccat: 'CCAT (Financial Atelier & Teal)',
   none: 'None',
 } as const satisfies Record<ThemeId, string>
 
@@ -202,6 +206,13 @@ export const presets = {
     description: 'Cinematic Noir Studio Violet theme',
     theme: cinematicNoirTheme,
     slug: 'cinematic-noir',
+  },
+  ccat: {
+    uid: 'cCat_FinAtelier_10884',
+    name: 'CCAT',
+    description: 'CCAT Financial Atelier & Teal theme',
+    theme: ccatTheme,
+    slug: 'ccat',
   },
   elysiajs: {
     uid: 'nEVZkRmCylPkT0o9YJa7y',
