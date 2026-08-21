@@ -1,0 +1,59 @@
+name: Publish to GitHub Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Pacotes a publicar (ex: packages/api-reference ou vazio para todos)'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js (with GitHub Packages registry)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@${{ github.repository_owner }}'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build Packages
+        run: pnpm build:packages
+
+      - name: Prepare Package Scopes for GitHub Packages
+        run: node scripts/prepare-github-packages.mjs
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+
+      - name: Publish to GitHub Packages
+        run: |
+          if [ -n "${{ inputs.packages }}" ]; then
+            echo "Publishing specific package: ${{ inputs.packages }}"
+            cd ${{ inputs.packages }}
+            pnpm publish --no-git-checks --registry https://npm.pkg.github.com
+          else
+            echo "Publishing all packages in workspace..."
+            pnpm -r publish --no-git-checks --registry https://npm.pkg.github.com
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
