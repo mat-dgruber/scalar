@@ -197,8 +197,8 @@ async def scalar_html():
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
-        <div id="app"></div>
-        <script src="https://cdn.jsdelivr.net/gh/mat-dgruber/scalar@main/packages/api-reference/dist/browser/standalone.js"></script>
+        <!-- CDN do Standalone API Reference -->
+        <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
         <script>
           Scalar.createApiReference('#app', {
             url: '/openapi.json',
