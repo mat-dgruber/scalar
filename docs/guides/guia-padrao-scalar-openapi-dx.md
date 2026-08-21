@@ -65,7 +65,61 @@ Utilizamos a versão do fork `@mat-dgruber/scalar` para garantir suporte a IA co
 
 ---
 
-### B. Inicialização em Projetos FastAPI / Python (Auto-Hospedado)
+### B. Instalação e Uso em Projetos Angular (ex: `despesas-web`)
+
+No Angular (Standalone Components ou Tradicional), o Scalar deve ser montado no ciclo de vida `AfterViewInit` utilizando um `ElementRef` e com `ViewEncapsulation.None` para garantir que o tema, os modais e o chat do Gemini renderizem perfeitamente:
+
+1. **Instalar o pacote:**
+   ```bash
+   npm install @mat-dgruber/api-reference
+   ```
+
+2. **Criar o componente `ScalarDocsComponent` (`scalar-docs.component.ts`):**
+
+   ```typescript
+   import { Component, ElementRef, AfterViewInit, ViewChild, ViewEncapsulation } from '@angular/core';
+   import { createApiReference } from '@mat-dgruber/api-reference';
+   import '@mat-dgruber/api-reference/style.css';
+
+   @Component({
+     selector: 'app-scalar-docs',
+     standalone: true,
+     template: `
+       <div #scalarContainer class="scalar-container"></div>
+     `,
+     styles: [`
+       .scalar-container {
+         width: 100%;
+         height: 100vh;
+         overflow-y: auto;
+       }
+     `],
+     // ViewEncapsulation.None garante que o estilo e temas do Scalar se apliquem corretamente
+     encapsulation: ViewEncapsulation.None,
+   })
+   export class ScalarDocsComponent implements AfterViewInit {
+     @ViewChild('scalarContainer', { static: true }) scalarContainer!: ElementRef<HTMLDivElement>;
+
+     ngAfterViewInit(): void {
+       if (this.scalarContainer?.nativeElement) {
+         createApiReference(this.scalarContainer.nativeElement, {
+           url: 'https://api-gsd.cpb.com.br/v2/openapi.json', // ou sua URL da API
+           agent: {
+             provider: 'gemini',
+             gemini: {
+               model: 'gemini-3.7-flash', // Padrão recomendado
+               // apiKey: 'opcional' -> o usuário pode configurar pelo modal ⚙️ no chat
+             },
+           },
+         });
+       }
+     }
+   }
+   ```
+
+---
+
+### C. Inicialização em Projetos FastAPI / Python (Auto-Hospedado)
 
 Você pode servir a documentação diretamente via FastAPI apontando para o bundle standalone do nosso fork:
 
@@ -113,7 +167,7 @@ async def scalar_html():
 
 ---
 
-### C. Como Funciona a Seleção de Modelos e BYOK no Chat
+### D. Como Funciona a Seleção de Modelos e BYOK no Chat
 
 O Scalar integrado com Gemini possui um seletor visual e persistência automática:
 - **Modelos Frontier (3.x)**: `gemini-3.7-flash` (Padrão), `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.1-pro`, `gemini-3.1-flash-lite`.
