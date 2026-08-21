@@ -1,13 +1,19 @@
 import { Chat } from '@ai-sdk/vue'
 import { type ModalState, useModal } from '@scalar/components/modal'
 import { apiReferenceConfigurationSchema } from '@scalar/schemas/api-reference'
-import type { ApiReferenceConfigurationRaw } from '@scalar/types/api-reference'
+import type { AgentProvider, ApiReferenceConfigurationRaw, GeminiConfig } from '@scalar/types/api-reference'
 import { useToasts } from '@scalar/use-toasts'
 import { coerce } from '@scalar/validation'
 import { type WorkspaceStore, createWorkspaceStore } from '@scalar/workspace-store/client'
 import type { WorkspaceEventBus } from '@scalar/workspace-store/events'
 import { createWorkspaceEventBus } from '@scalar/workspace-store/events'
-import { DefaultChatTransport, type UIDataTypes, type UIMessage, lastAssistantMessageIsCompleteWithToolCalls } from 'ai'
+import {
+  type ChatTransport,
+  DefaultChatTransport,
+  type UIDataTypes,
+  type UIMessage,
+  lastAssistantMessageIsCompleteWithToolCalls,
+} from 'ai'
 import { n } from 'neverpanic'
 import { type ComputedRef, type InjectionKey, type Ref, computed, inject, reactive, ref, watch } from 'vue'
 
@@ -40,7 +46,10 @@ import { removeTmpDocFromLocalStorage } from '@/hooks/use-upload-tmp-document'
 import { persistencePlugin } from '@/plugins/persistance'
 import { loadDocument } from '@/registry/add-documents-to-store'
 import { createDocumentName } from '@/registry/create-document-name'
+import { GeminiChatTransport } from '@/transports/gemini-chat-transport'
 import type { ChatMode } from '@/types'
+
+import { getEffectiveGeminiConfig, loadStoredGeminiConfig } from './gemini-settings'
 
 export type RegistryDocument = {
   namespace: string
@@ -99,6 +108,8 @@ type State = {
   curatedDocuments: Ref<ApiMetadata[]>
   getActiveDocumentJson?: () => string
   hideAddApi?: boolean
+  provider?: AgentProvider
+  geminiConfig?: GeminiConfig
 }
 
 function createChat({
@@ -108,6 +119,8 @@ function createChat({
   proxyUrl,
   getAccessToken,
   getAgentKey,
+  provider,
+  geminiConfig,
 }: {
   registryDocuments: Ref<ApiMetadata[]>
   workspaceStore: WorkspaceStore
@@ -115,16 +128,55 @@ function createChat({
   proxyUrl: ComputedRef<string>
   getAccessToken?: () => string
   getAgentKey?: () => string
+  provider?: AgentProvider
+  geminiConfig?: GeminiConfig
 }) {
+  const dynamicTransport: ChatTransport<UIMessage<unknown, UIDataTypes, Tools>> = {
+    sendMessages(options: any) {
+      const isGeminiActive =
+        provider === 'gemini' ||
+        (provider !== 'scalar' && (Boolean(geminiConfig?.apiKey) || Boolean(loadStoredGeminiConfig()?.apiKey)))
+
+      const activeTransport = isGeminiActive
+        ? new GeminiChatTransport({
+            apiKey: () => getEffectiveGeminiConfig(geminiConfig).apiKey,
+            model: () => getEffectiveGeminiConfig(geminiConfig).model,
+            baseUrl: () => getEffectiveGeminiConfig(geminiConfig).baseUrl,
+          })
+        : new DefaultChatTransport({
+            api: `${baseUrl}/vector/openapi/chat`,
+            headers: () => createAuthorizationHeaders({ getAccessToken, getAgentKey }),
+            body: () => ({
+              registryDocuments: registryDocuments.value,
+            }),
+          })
+
+      return activeTransport.sendMessages(options)
+    },
+    reconnectToStream(options: any) {
+      const isGeminiActive =
+        provider === 'gemini' ||
+        (provider !== 'scalar' && (Boolean(geminiConfig?.apiKey) || Boolean(loadStoredGeminiConfig()?.apiKey)))
+
+      if (isGeminiActive) {
+        return Promise.resolve(null)
+      }
+
+      const defaultTransport = new DefaultChatTransport({
+        api: `${baseUrl}/vector/openapi/chat`,
+        headers: () => createAuthorizationHeaders({ getAccessToken, getAgentKey }),
+        body: () => ({
+          registryDocuments: registryDocuments.value,
+        }),
+      })
+
+      return defaultTransport.reconnectToStream?.(options) ?? Promise.resolve(null)
+    },
+  }
+
   const chat = new Chat<UIMessage<unknown, UIDataTypes, Tools>>({
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-    transport: new DefaultChatTransport({
-      api: `${baseUrl}/vector/openapi/chat`,
-      headers: () => createAuthorizationHeaders({ getAccessToken, getAgentKey }),
-      body: () => ({
-        registryDocuments: registryDocuments.value,
-      }),
-    }),
+    transport: dynamicTransport,
     async onToolCall({ toolCall }): Promise<any> {
       if (toolCall.dynamic) {
         return
@@ -161,6 +213,8 @@ export function createState({
   getActiveDocumentJson,
   prefilledMessageRef,
   hideAddApi,
+  provider,
+  geminiConfig,
 }: {
   initialRegistryDocuments: { namespace: string; slug: string }[]
   registryUrl: string
@@ -174,6 +228,8 @@ export function createState({
   getActiveDocumentJson?: () => string
   prefilledMessageRef?: Ref<string>
   hideAddApi?: boolean
+  provider?: AgentProvider
+  geminiConfig?: GeminiConfig
 }): State {
   const prompt = ref<State['prompt']['value']>(prefilledMessageRef?.value ?? '')
   const registryDocuments = ref<ApiMetadata[]>([])
@@ -207,6 +263,8 @@ export function createState({
     proxyUrl,
     getAccessToken,
     getAgentKey,
+    provider,
+    geminiConfig,
   })
 
   const api = createApi({
@@ -389,6 +447,8 @@ export function createState({
     curatedDocuments,
     getActiveDocumentJson,
     hideAddApi,
+    provider,
+    geminiConfig,
   }
 }
 

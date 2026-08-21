@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AgentProvider, GeminiConfig } from '@scalar/types/api-reference'
 import { provide, type Ref } from 'vue'
 
 import Chat from '@/Chat.vue'
@@ -18,6 +19,8 @@ const {
   isLoggedIn,
   prefilledMessage,
   hideAddApi,
+  provider,
+  geminiConfig,
 } = defineProps<{
   registryDocuments: RegistryDocument[]
   registryUrl: string
@@ -31,6 +34,8 @@ const {
   isLoggedIn?: Ref<boolean>
   prefilledMessage?: Ref<string>
   hideAddApi?: boolean
+  provider?: AgentProvider
+  geminiConfig?: GeminiConfig
 }>()
 
 defineEmits<{
@@ -50,6 +55,8 @@ const state = createState({
   isLoggedIn,
   dashboardUrl,
   hideAddApi,
+  provider,
+  geminiConfig,
 })
 
 provide(STATE_SYMBOL, state)
