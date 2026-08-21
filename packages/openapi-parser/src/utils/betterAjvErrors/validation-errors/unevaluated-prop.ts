@@ -1,13 +1,13 @@
 import BaseValidationError from './base'
 
 export default class UnevaluatedPropValidationError extends BaseValidationError {
-  constructor(...args) {
-    super(...args)
+  constructor(options: any = {}, extra: any = {}) {
+    super(options, extra)
     this.name = 'UnevaluatedPropValidationError'
     this.options.isIdentifierLocation = true
   }
 
-  getError() {
+  override getError() {
     const { params } = this.options
 
     return {

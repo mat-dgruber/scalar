@@ -4384,6 +4384,40 @@ describe('create-workspace-store', () => {
       })
     })
   })
+
+  describe('commitDocument', () => {
+    it('commits in-memory document changes as the new baseline and clears dirty status', async () => {
+      const store = createWorkspaceStore()
+      await store.addDocument({
+        name: 'test-doc',
+        document: {
+          openapi: '3.1.0',
+          info: { title: 'Initial API', version: '1.0.0' },
+          paths: {},
+        },
+      })
+
+      const doc = store.workspace.documents['test-doc']
+      expect(doc).toBeDefined()
+      expect(doc?.['x-scalar-is-dirty']).toBeFalsy()
+
+      // Modify in-memory
+      if (doc?.info) {
+        doc.info.title = 'Updated Title'
+        doc['x-scalar-is-dirty'] = true
+      }
+
+      expect(doc?.['x-scalar-is-dirty']).toBe(true)
+
+      // Commit document
+      store.commitDocument('test-doc')
+
+      expect(doc?.['x-scalar-is-dirty']).toBe(false)
+
+      const exported = store.exportWorkspace()
+      expect((exported.originalDocuments?.['test-doc'] as any)?.info?.title).toBe('Updated Title')
+    })
+  })
 })
 
 // Notes:

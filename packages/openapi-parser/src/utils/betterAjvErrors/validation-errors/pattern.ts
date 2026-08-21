@@ -1,13 +1,13 @@
 import BaseValidationError from './base'
 
 export default class PatternValidationError extends BaseValidationError {
-  constructor(...args) {
-    super(...args)
+  constructor(options: any = {}, extra: any = {}) {
+    super(options, extra)
     this.name = 'PatternValidationError'
     this.options.isIdentifierLocation = true
   }
 
-  getError() {
+  override getError() {
     const { params, propertyName } = this.options
 
     return {

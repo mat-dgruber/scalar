@@ -486,12 +486,10 @@ export type WorkspaceStore = {
   /**
    * Commits the specified document.
    *
-   * This method is intended to finalize and persist the current state of the document,
-   * potentially syncing it with a remote registry or marking it as the latest committed version.
+   * Promotes the current in-memory edits for a document to be the new baseline (original document),
+   * resetting its dirty status and keeping intermediate documents aligned.
    *
    * @param documentName - The name of the document to commit.
-   * @remarks
-   * The actual commit logic is not implemented yet.
    */
   commitDocument(documentName: string): void
   /**
@@ -1456,8 +1454,17 @@ export const createWorkspaceStore = (workspaceProps?: WorkspaceProps): Workspace
       })
     },
     commitDocument(documentName: string) {
-      // TODO: Implement commit logic
-      console.warn(`Commit operation for document '${documentName}' is not implemented yet.`)
+      const activeDocument = workspace.documents[documentName]
+      if (!activeDocument) {
+        console.warn(`Cannot commit document '${documentName}': document does not exist in workspace`)
+        return
+      }
+
+      // Snapshot current document state as baseline
+      const unpacked = unpackProxyObject(activeDocument)
+      originalDocuments[documentName] = deepClone(unpacked)
+      intermediateDocuments[documentName] = deepClone(unpacked)
+      activeDocument['x-scalar-is-dirty'] = false
     },
     exportWorkspace() {
       const { activeDocument: _, documents, ...meta } = unpackProxyObject(workspace)

@@ -1,12 +1,12 @@
 import BaseValidationError from './base'
 
 export default class RequiredValidationError extends BaseValidationError {
-  constructor(...args) {
-    super(...args)
+  constructor(options: any = {}, extra: any = {}) {
+    super(options, extra)
     this.name = 'RequiredValidationError'
   }
 
-  getError() {
+  override getError() {
     const { message } = this.options
 
     return {

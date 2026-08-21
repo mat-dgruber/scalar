@@ -4,17 +4,17 @@ import leven from 'leven'
 import BaseValidationError from './base'
 
 export default class EnumValidationError extends BaseValidationError {
-  constructor(...args) {
-    super(...args)
+  constructor(options: any = {}, extra: any = {}) {
+    super(options, extra)
     this.name = 'EnumValidationError'
   }
 
-  getError() {
+  override getError() {
     const { message, params } = this.options
     const bestMatch = this.findBestMatch()
     const allowedValues = params.allowedValues.join(', ')
 
-    const output = {
+    const output: { message: string; path: string; suggestion?: string } = {
       message: `${message}: ${allowedValues}`,
       path: this.instancePath,
     }
@@ -42,7 +42,7 @@ export default class EnumValidationError extends BaseValidationError {
         value,
         weight: leven(value, currentValue.toString()),
       }))
-      .sort((x, y) => (x.weight > y.weight ? 1 : x.weight < y.weight ? -1 : 0))[0]
+      .sort((x, y) => x.weight - y.weight)[0]
 
     return allowedValues.length === 1 || bestMatch.weight < bestMatch.value.length ? bestMatch.value : null
   }

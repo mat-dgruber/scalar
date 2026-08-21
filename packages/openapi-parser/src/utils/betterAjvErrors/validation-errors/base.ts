@@ -3,22 +3,29 @@
 // import { getMetaFromPath } from '@/json/index'
 
 export default class BaseValidationError {
-  constructor(options = { isIdentifierLocation: false }, { data, schema, jsonAst, jsonRaw }) {
+  public options: any
+  public data: any
+  public schema: any
+  public jsonAst: any
+  public jsonRaw: any
+  public name?: string
+
+  constructor(options: any = { isIdentifierLocation: false }, extra: any = {}) {
     this.options = options
-    this.data = data
-    this.schema = schema
-    this.jsonAst = jsonAst
-    this.jsonRaw = jsonRaw
+    this.data = extra?.data
+    this.schema = extra?.schema
+    this.jsonAst = extra?.jsonAst
+    this.jsonRaw = extra?.jsonRaw
   }
 
   /**
    * @return {string}
    */
-  get instancePath() {
+  get instancePath(): string {
     return typeof this.options.instancePath !== 'undefined' ? this.options.instancePath : this.options.dataPath
   }
 
-  getError() {
+  getError(): any {
     throw new Error(`Implement the 'getError' method inside ${this.constructor.name}!`)
   }
 }

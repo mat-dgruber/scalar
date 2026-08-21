@@ -6,5 +6,38 @@
     "frontend-design@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Write|Edit|Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PWD/.claude/scripts/protect-secrets.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PWD/.claude/scripts/verify-semver.sh\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'file=$(echo \"$TOOL_INPUT\" | jq -r \".file_path // empty\" 2>/dev/null); if [ -n \"$file\" ] && [ -f \"$file\" ]; then case \"$file\" in *.ts|*.js|*.json) corepack pnpm biome check --write --diagnostic-level=error --no-errors-on-unmatched --files-ignore-unknown=true \"$file\" 2>/dev/null || true ;; *.vue|*.md|*.css|*.html|*.yml|*.yaml) corepack pnpm prettier --write \"$file\" 2>/dev/null || true ;; esac; fi; if command -v graphify >/dev/null 2>&1; then graphify update . >/dev/null 2>&1 & fi'"
+          }
+        ]
+      }
+    ]
   }
 }

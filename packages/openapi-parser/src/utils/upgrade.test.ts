@@ -59,6 +59,34 @@ describe('upgrade', () => {
     expect(specification.openapi).toBe('3.1.1')
   })
 
+  it('upgrades referenced files within a filesystem', () => {
+    const fs = [
+      {
+        filename: 'openapi.yaml',
+        isEntrypoint: true,
+        specification: {
+          openapi: '3.0.0',
+          info: { title: 'Main API', version: '1.0.0' },
+          paths: {},
+        },
+      },
+      {
+        filename: 'models.yaml',
+        isEntrypoint: false,
+        specification: {
+          openapi: '3.0.0',
+          info: { title: 'Models', version: '1.0.0' },
+          paths: {},
+        },
+      },
+    ]
+
+    const { specification } = upgrade(fs as any)
+
+    expect(specification.openapi).toBe('3.1.1')
+    expect((fs[1]!.specification as any).openapi).toBe('3.1.1')
+  })
+
   it('deals with null', () => {
     const { specification } = upgrade(null)
 

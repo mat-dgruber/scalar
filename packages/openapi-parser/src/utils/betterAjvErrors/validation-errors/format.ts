@@ -9,14 +9,14 @@ import BaseValidationError from './base'
  * To add a new format enhancer, add a case to the switch in `getError()`.
  */
 export default class FormatValidationError extends BaseValidationError {
-  constructor(...args) {
-    super(...args)
+  constructor(options: any = {}, extra: any = {}) {
+    super(options, extra)
     this.name = 'FormatValidationError'
     this.options.isSkipEndLocation = true
   }
 
-  getError() {
-    const { keyword, message, params, instancePath: errorPath } = this.options
+  override getError() {
+    const { keyword, message, params } = this.options
     const path = this.instancePath
     const format = params?.format
 
@@ -41,6 +41,7 @@ export default class FormatValidationError extends BaseValidationError {
   _getUriReferenceMessage() {
     const refValue = this._extractRefValue()
 
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally matching non-ASCII range
     if (refValue && /[^\x00-\x7F]/.test(refValue)) {
       return `$ref "${refValue}" contains non-ASCII characters`
     }

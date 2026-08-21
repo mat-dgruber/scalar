@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ExamplePicker } from '@scalar/blocks/code-example'
+import { ExamplePicker, getResolvedRefDeep } from '@scalar/blocks/code-example'
 import {
   ScalarCard,
   ScalarCardFooter,
@@ -7,14 +7,19 @@ import {
 } from '@scalar/components/card'
 import { ScalarIcon } from '@scalar/components/icon'
 import { ScalarMarkdown } from '@scalar/components/markdown'
+import { prettyPrintJson } from '@scalar/helpers/json/pretty-print-json'
 import { objectKeys } from '@scalar/helpers/object/object-keys'
 import { useClipboard } from '@scalar/use-hooks/useClipboard'
 import type { WorkspaceEventBus } from '@scalar/workspace-store/events'
 import { getResolvedRef } from '@scalar/workspace-store/helpers/get-resolved-ref'
-import { getExample } from '@scalar/workspace-store/request-example'
+import {
+  getExample,
+  getExampleFromSchema,
+} from '@scalar/workspace-store/request-example'
 import type {
   MediaTypeObject,
   ResponsesObject,
+  SchemaObject,
 } from '@scalar/workspace-store/schemas/v3.1/strict/openapi-document'
 import { computed, ref, toValue, useId, watch } from 'vue'
 
@@ -27,10 +32,6 @@ import ExampleResponseTab from './ExampleResponseTab.vue'
 import ExampleResponseTabList from './ExampleResponseTabList.vue'
 import { hasResponseContent } from './helpers/has-response-content'
 import { normalizeMimeTypeObject } from './helpers/normalize-mime-type-object'
-
-/**
- * TODO: copyToClipboard isn't using the right content if there are multiple examples
- */
 
 const { responses, selectedExample, eventBus } = defineProps<{
   responses: ResponsesObject
@@ -153,6 +154,34 @@ const currentExample = computed(() => {
   return getExample(currentResponseContent.value, undefined, undefined)
 })
 
+/** Formatted text content of the currently active example for copying */
+const formattedCurrentExample = computed<string | undefined>(() => {
+  if (currentExample.value !== undefined) {
+    const resolved = getResolvedRefDeep(currentExample.value)
+    const val = (resolved as any)?.value ?? resolved
+    if (val !== undefined && val !== '') {
+      return typeof val === 'string' ? val : prettyPrintJson(val)
+    }
+  }
+
+  if (currentResponseContent.value?.schema) {
+    const exampleFromSchema = getExampleFromSchema(
+      getResolvedRefDeep(currentResponseContent.value.schema) as SchemaObject,
+      {
+        emptyString: 'string',
+        mode: 'read',
+      },
+    )
+    if (exampleFromSchema !== undefined && exampleFromSchema !== null) {
+      return typeof exampleFromSchema === 'string'
+        ? exampleFromSchema
+        : prettyPrintJson(exampleFromSchema)
+    }
+  }
+
+  return undefined
+})
+
 const changeTab = (index: number) => {
   selectedResponseIndex.value = index
   // Re-apply the document-wide selection for the newly selected response, falling back to its first example
@@ -178,10 +207,14 @@ const showSchema = ref(false)
 
       <template #actions>
         <button
-          v-if="currentResponseContent?.example"
+          v-if="formattedCurrentExample"
           class="code-copy"
           type="button"
-          @click="() => copyToClipboard(currentResponseContent?.example)">
+          @click="
+            () =>
+              formattedCurrentExample &&
+              copyToClipboard(formattedCurrentExample)
+          ">
           <ScalarIcon
             icon="Clipboard"
             width="12px" />

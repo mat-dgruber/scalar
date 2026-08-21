@@ -18,15 +18,20 @@ export function upgrade(value: string | UnknownObject | Filesystem): UpgradeResu
     }
   }
 
-  // TODO: Run upgrade over the whole filesystem
-  const document = originalUpgrade(
-    isFilesystem(value) ? getEntrypoint(value).specification : (normalize(value) as UnknownObject),
-    '3.1',
-  )
+  if (isFilesystem(value)) {
+    for (const entry of value) {
+      if (entry.specification) {
+        entry.specification = originalUpgrade(entry.specification, '3.1')
+      }
+    }
+  }
+
+  const document = isFilesystem(value)
+    ? getEntrypoint(value).specification
+    : (originalUpgrade(normalize(value) as UnknownObject, '3.1') as OpenApiDocumentV3_1)
 
   return {
     specification: document,
-    // TODO: Make dynamic
     version: '3.1',
   } as UpgradeResult<OpenApiDocumentV3_1>
 }
