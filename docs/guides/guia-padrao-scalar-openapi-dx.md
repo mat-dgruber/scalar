@@ -17,7 +17,8 @@ Data       | Autor          | Descrição da Alteração
            | (Antigravity)  | Fork Customizado (@mat-dgruber/scalar) nos projetos com
            |                | suporte nativo a Google Gemini (BYOK / Model Selector).
 2026-08-21 | Matheus Diniz  | Atualização v2.2.0: Adicionado guia de autenticação GitHub
-           | (Antigravity)  | PAT para consumo dos pacotes @mat-dgruber pela equipe.
+           | (Antigravity)  | PAT para consumo dos pacotes @mat-dgruber pela equipe
+           |                | e diretrizes de troubleshooting para Agentes de IA.
 =================================================================================
 -->
 
@@ -31,33 +32,58 @@ Data       | Autor          | Descrição da Alteração
 
 Utilizamos a versão do fork `@mat-dgruber/scalar` para garantir suporte a IA com Google Gemini, correções de schema e performance.
 
-> **Os pacotes estão publicados no GitHub Packages** e exigem autenticação. Cada membro da equipe precisa gerar um **GitHub Personal Access Token (PAT)** uma vez na sua máquina.
+> [!IMPORTANT]
+> **Autenticação Obrigatória no GitHub Packages (Para Humanos e IAs)**
+> Os pacotes sob o escopo `@mat-dgruber/*` estão hospedados no **GitHub Packages**. 
+> Diferente do npm público tradicional, o GitHub Packages **sempre exige autenticação prévia** para download, mesmo que os pacotes sejam públicos.
+> 
+> - **Cada desenvolvedor deve gerar seu próprio PAT na sua própria conta GitHub** (não precisa ser na conta `mat-dgruber`, qualquer conta GitHub com PAT `read:packages` tem permissão de leitura).
+> - **Nunca compartilhe tokens individuais em commits ou repositórios públicos.**
 
 ---
 
-### 🔑 Pré-requisito: Configurar Autenticação GitHub Packages
+### 🔑 Pré-requisito: Configurar Autenticação GitHub Packages (Uma única vez por máquina)
 
-Esse passo é feito **uma única vez por máquina** e serve para todos os projetos.
+Esse passo é feito **uma única vez por máquina** por cada membro da equipe e serve para todos os projetos:
 
-**1. Gerar o token:**
-- Acesse: [github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens/new)
-- Marque **apenas**: ✅ `read:packages`
-- Defina uma expiração (ex: 1 ano)
-- Copie o token gerado (`ghp_...`)
+#### 1. Gerar o token pessoal:
+1. Acesse: [github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens/new)
+2. Dê um nome (ex: `leitura-packages-scalar`)
+3. Marque **apenas**: ✅ `read:packages` (Download packages from GitHub Package Registry)
+4. Defina a validade (ex: 90 dias ou 1 ano)
+5. Clique em **Generate token** e copie o código gerado (`ghp_...`).
 
-**2. Configurar globalmente no npm (substitua `ghp_SEU_TOKEN` pelo seu token):**
+#### 2. Configurar globalmente no terminal:
+Execute os comandos abaixo substituindo `ghp_SEU_TOKEN` pelo token que você acabou de gerar:
 ```bash
 npm config set //npm.pkg.github.com/:_authToken ghp_SEU_TOKEN
 npm config set @mat-dgruber:registry https://npm.pkg.github.com
 ```
 
-Pronto. Não é necessário mais nenhuma configuração por projeto.
+Após rodar esses dois comandos, qualquer `npm install`, `pnpm add` ou `yarn add` de `@mat-dgruber/*` funcionará normalmente e de forma transparente.
 
-> **Para CI/CD** (GitHub Actions, Jenkins, etc.), use a variável de ambiente `NODE_AUTH_TOKEN` no `.npmrc`:
+> [!TIP]
+> **Para Ambientes de CI/CD (GitHub Actions, GitLab CI, Jenkins, Docker)**:
+> Crie um arquivo `.npmrc` na raiz do projeto consumidor consumindo variável de ambiente:
 > ```ini
 > @mat-dgruber:registry=https://npm.pkg.github.com
 > //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 > ```
+> E configure o secret `NODE_AUTH_TOKEN` (ou `GITHUB_TOKEN`) nas variáveis do pipeline.
+
+---
+
+### 🤖 Instruções Mandatórias para Agentes de IA e Assistentes de Código (Antigravity, Cursor, Claude, Copilot)
+
+> [!CAUTION]
+> **Diretriz para o Agente de IA ao instalar ou atualizar pacotes `@mat-dgruber/*`:**
+> 1. **Detecção de Falha de Autenticação (HTTP 401 / 403 / E401 / ERR_PNPM_FETCH_401):**
+>    Se o comando de instalação (`npm install`, `pnpm add`, `yarn add`) falhar ao tentar baixar pacotes `@mat-dgruber/*`, a causa raiz é a falta do token de autenticação configurado no ambiente local do usuário.
+> 2. **Ação Requerida da IA:**
+>    - **NÃO** tente contornar o erro trocando arbitrariamente de pacote para a versão oficial `@scalar/*` sem autorização explícita (pois a versão oficial não contém o suporte ao Google Gemini BYOK e as customizações necessárias).
+>    - **NÃO** tente adivinhar credenciais nem inserir senhas fictícias.
+>    - **PAUSE** a execução e alerte o usuário humano imediatamente, fornecendo o link direto ([github.com/settings/tokens/new](https://github.com/settings/tokens/new)) e orientando-o a gerar seu token com o escopo `read:packages` e executar o comando de configuração global `npm config set //npm.pkg.github.com/:_authToken <seu_token>`.
+> 3. **Confirmação:** Após o usuário confirmar que configurou o token, o agente pode prosseguir com a instalação normalmente.
 
 ---
 
