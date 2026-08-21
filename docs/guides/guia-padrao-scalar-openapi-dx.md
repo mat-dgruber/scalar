@@ -172,7 +172,7 @@ No Angular (Standalone Components ou Tradicional), o Scalar deve ser montado no 
 
 ### C. Inicialização em Projetos FastAPI / Python (Auto-Hospedado)
 
-Você pode servir a documentação diretamente via FastAPI apontando para o bundle standalone do nosso fork:
+Você pode servir a documentação diretamente via FastAPI apontando para o bundle standalone do nosso fork (hospedado automaticamente nos Releases do GitHub):
 
 ```python
 from fastapi import FastAPI
@@ -197,8 +197,10 @@ async def scalar_html():
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
-        <!-- CDN do Standalone API Reference -->
-        <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+        <div id="app"></div>
+
+        <!-- Bundle Standalone compilado do nosso fork com suporte ao Google Gemini -->
+        <script src="https://github.com/mat-dgruber/scalar/releases/latest/download/standalone.js"></script>
         <script>
           Scalar.createApiReference('#app', {
             url: '/openapi.json',
@@ -215,6 +217,10 @@ async def scalar_html():
     """
     return HTMLResponse(content=html_content)
 ```
+
+> [!TIP]
+> **Como funciona a URL `https://github.com/mat-dgruber/scalar/releases/latest/download/standalone.js`:**
+> A cada execução do workflow de publicação no repositório `mat-dgruber/scalar`, o GitHub Actions compila o bundle e atualiza a release `latest`. Qualquer backend FastAPI consumindo essa URL recebe as novidades e melhorias do chat de IA automaticamente sem necessidade de rebuild no Python.
 
 ---
 
