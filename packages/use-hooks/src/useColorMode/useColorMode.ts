@@ -116,20 +116,34 @@ export function useColorMode(
     systemPreference.value = getSystemModePreference()
   }
 
+  const handleStorageChange = (e: StorageEvent) => {
+    if (e.key === 'colorMode' && e.newValue) {
+      if (validate(colorModeSchema, e.newValue)) {
+        colorMode.value = e.newValue as ColorMode
+      }
+    }
+  }
+
   const mediaQuery = ref<MediaQueryList | null>(null)
-  // Listen to system preference changes
+  // Listen to system preference changes and localStorage changes across tabs/sessions
   onMounted(() => {
     // Now that we are on the client, resolve the real system preference so the
     // color mode updates after hydration instead of mismatching the server.
     systemPreference.value = getSystemModePreference()
 
-    if (typeof window !== 'undefined' && typeof window?.matchMedia === 'function') {
-      mediaQuery.value = window.matchMedia('(prefers-color-scheme: dark)')
-      mediaQuery.value?.addEventListener('change', handleChange)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange)
+      if (typeof window?.matchMedia === 'function') {
+        mediaQuery.value = window.matchMedia('(prefers-color-scheme: dark)')
+        mediaQuery.value?.addEventListener('change', handleChange)
+      }
     }
   })
 
   onUnmounted(() => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', handleStorageChange)
+    }
     mediaQuery.value?.removeEventListener('change', handleChange)
   })
 

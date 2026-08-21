@@ -199,10 +199,13 @@ export function findDataAttributes(doc: Document, configuration: ApiReferenceCon
   /** @deprecated Use the new <script id="api-reference" data-url="/scalar.json" /> API instead. */
   const specUrlElement = doc.querySelector('[data-spec-url]')
 
-  if (configuration?.darkMode) {
+  const storedColorMode = typeof window !== 'undefined' ? window?.localStorage?.getItem('colorMode') : null
+  if (storedColorMode === 'dark' || (!storedColorMode && configuration?.darkMode)) {
     doc.body?.classList.add('dark-mode')
-  } else {
+    doc.body?.classList.remove('light-mode')
+  } else if (storedColorMode === 'light' || (!storedColorMode && configuration?.darkMode === false)) {
     doc.body?.classList.add('light-mode')
+    doc.body?.classList.remove('dark-mode')
   }
 
   const container = createContainer(doc, specElement || specUrlElement)

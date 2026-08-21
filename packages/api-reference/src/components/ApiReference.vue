@@ -356,8 +356,18 @@ const basePath = computed(() => mergedConfig.value.pathRouting?.basePath)
 const getSidebarItemHref = (item: Item): string =>
   makeHrefFromId(item.id, basePath.value, isMultiDocument.value)
 
+const activeTheme = computed(() => {
+  if (typeof window !== 'undefined') {
+    const storedTheme = window.localStorage?.getItem('scalar_theme')
+    if (storedTheme) {
+      return storedTheme as any
+    }
+  }
+  return mergedConfig.value.theme
+})
+
 const themeStyle = computed(() =>
-  getThemeStyles(mergedConfig.value.theme, {
+  getThemeStyles(activeTheme.value, {
     fonts: mergedConfig.value.withDefaultFonts,
   }),
 )

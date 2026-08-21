@@ -29,8 +29,21 @@ const snippet = computed<string>(() => {
 })
 
 const theme = computed<ThemeId>({
-  get: () => overrides.value?.theme ?? configuration?.theme ?? 'default',
-  set: (t) => (overrides.value = { ...overrides.value, theme: t }),
+  get: () => {
+    const storedTheme =
+      typeof window !== 'undefined'
+        ? (window.localStorage?.getItem('scalar_theme') as ThemeId)
+        : null
+    return (
+      overrides.value?.theme ?? storedTheme ?? configuration?.theme ?? 'default'
+    )
+  },
+  set: (t) => {
+    overrides.value = { ...overrides.value, theme: t }
+    if (typeof window !== 'undefined') {
+      window.localStorage?.setItem('scalar_theme', t)
+    }
+  },
 })
 
 const layout = computed<'modern' | 'classic'>({
