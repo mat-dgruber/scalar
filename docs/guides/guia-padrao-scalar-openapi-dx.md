@@ -13,20 +13,117 @@ Data       | Autor          | Descrição da Alteração
            |                | migração da API legada data-* para get_scalar_api_reference,
            |                | matriz completa de parâmetros reais, deploy/ambientes
            |                | e boas práticas de DX.
-2026-08-21 | Matheus Diniz  | Atualização v2.1.0: Inclusão do processo de inicialização,
-           | (Antigravity)  | compilação e publicação do Fork Customizado (@mat-dgruber/scalar),
-           |                | integração nativa com Google Gemini (BYOK / Model Selector)
-           |                | e consumo via GitHub Packages ou Standalone CDN.
+2026-08-21 | Matheus Diniz  | Atualização v2.1.0: Instalação e inicialização direta do
+           | (Antigravity)  | Fork Customizado (@mat-dgruber/scalar) nos projetos com
+           |                | suporte nativo a Google Gemini (BYOK / Model Selector).
 =================================================================================
 -->
 
-> **Este guia aborda tanto a inicialização do Scalar oficial quanto o uso do Fork Customizado (`@mat-dgruber/scalar`)**, com foco no auto-hospedado (FastAPI / CDN / Vue / React / Node) com suporte integrado a **Google Gemini AI (BYOK)**, builds otimizados e publicação via GitHub Packages. O Scalar roda na sua própria infraestrutura, sob o seu domínio, com total soberania de dados.
+> **Este guia é o padrão para inicializar e utilizar o Scalar nos nossos projetos (pessoais e da empresa)**, utilizando o **Fork Customizado (`@mat-dgruber/scalar`)** que inclui suporte nativo a **Google Gemini AI (BYOK - Bring Your Own Key)**, correções críticas e distribuição auto-hospedada (FastAPI / Vue / React / Node / CDN).
 
 **A regra que rege tudo:** a qualidade da doc depende do seu documento OpenAPI — o Scalar apenas renderiza o que a sua API expõe.
 
 ---
 
-## 🔧 1. Correções sobre a v1.0.0
+## 🚀 1. Inicialização e Instalação nos Projetos (Forma Principal)
+
+Utilizamos a versão do fork `@mat-dgruber/scalar` para garantir suporte a IA com Google Gemini, correções de schema e performance.
+
+### A. Instalação em Projetos Node / Vue / React / Next.js / NestJS
+
+1. **Configurar o `.npmrc` na raiz do seu projeto consumidor:**
+   ```ini
+   @mat-dgruber:registry=https://npm.pkg.github.com
+   # Se o repositório for privado, adicione o token:
+   # //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+   ```
+
+2. **Instalar o pacote:**
+   ```bash
+   pnpm add @mat-dgruber/api-reference
+   # ou com npm / yarn:
+   npm install @mat-dgruber/api-reference
+   ```
+
+3. **Inicializar no seu código com Google Gemini:**
+
+   ```typescript
+   import { createApiReference } from '@mat-dgruber/api-reference'
+   import '@mat-dgruber/api-reference/style.css'
+
+   createApiReference('#app', {
+     url: '/openapi.json',
+     agent: {
+       provider: 'gemini',
+       gemini: {
+         model: 'gemini-3.7-flash', // Padrão recomendado (ou gemini-2.5-pro, gemini-3.6-flash, etc.)
+         apiKey: process.env.VITE_GEMINI_API_KEY, // Opcional (o usuário pode preencher via modal ⚙️ no chat)
+       },
+     },
+   })
+   ```
+
+---
+
+### B. Inicialização em Projetos FastAPI / Python (Auto-Hospedado)
+
+Você pode servir a documentação diretamente via FastAPI apontando para o bundle standalone do nosso fork:
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+
+app = FastAPI(
+    title="meuCPB API",
+    version="1.0.0",
+    description="Backend for Frontend (BFF) unificado.",
+    openapi_url="/openapi.json",
+)
+
+
+@app.get("/scalar", include_in_schema=False)
+async def scalar_html():
+    html_content = """
+    <!doctype html>
+    <html>
+      <head>
+        <title>Documentação da API</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body>
+        <div id="app"></div>
+        <script src="https://cdn.jsdelivr.net/gh/mat-dgruber/scalar@main/packages/api-reference/dist/browser/standalone.js"></script>
+        <script>
+          Scalar.createApiReference('#app', {
+            url: '/openapi.json',
+            agent: {
+              provider: 'gemini',
+              gemini: {
+                model: 'gemini-3.7-flash'
+              }
+            }
+          })
+        </script>
+      </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+```
+
+---
+
+### C. Como Funciona a Seleção de Modelos e BYOK no Chat
+
+O Scalar integrado com Gemini possui um seletor visual e persistência automática:
+- **Modelos Frontier (3.x)**: `gemini-3.7-flash` (Padrão), `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.1-pro`, `gemini-3.1-flash-lite`.
+- **Modelos Stable (2.5)**: `gemini-2.5-pro`, `gemini-2.5-flash`.
+- **Modelos Customizados**: Qualquer modelo suportado pela API do Google.
+- **Hierarquia de Precedência:** `localStorage (Configurado via modal ⚙️ pelo usuário)` > `Props passadas no código` > `Default (gemini-3.7-flash)`.
+
+---
+
+## 🔧 2. Migração da API Legada `data-*` (Importante)
 
 ### A. Migrar da API legada `data-*` (Obrigatório)
 
@@ -424,127 +521,5 @@ Quando aplicações manipulam especificações OpenAPI muito grandes (como ecoss
 ### C. Desreferenciação Assíncrona
 - Para documentos massivos, priorize o pré-processamento de `$ref` em tempo de build/servidor ou via workers assíncronos, reduzindo a carga síncrona na thread principal da interface.
 
----
-
-## 🚀 9. Inicialização e Uso do Fork Customizado (`@mat-dgruber/scalar`)
-
-Este fork traz personalizações de segurança, correções críticas e a integração nativa com o **Google Gemini** para o chat de documentação (suportando BYOK - *Bring Your Own Key*, seleção de modelos Frontier 3.x / Stable 2.5 e persistência em `localStorage`).
-
-### A. Inicialização e Desenvolvimento Local no Monorepo
-
-Para clonar, instalar e rodar o projeto na sua máquina:
-
-```bash
-# 1. Clonar o fork
-git clone https://github.com/mat-dgruber/scalar.git
-cd scalar
-
-# 2. Instalar as dependências via Corepack / pnpm
-corepack enable
-corepack pnpm install
-
-# 3. Compilar todos os pacotes do monorepo
-corepack pnpm build:packages
-
-# 4. Executar os testes unitários com escopo
-corepack pnpm --filter @scalar/api-reference test
-corepack pnpm --filter @scalar/agent-chat test
-```
-
-### B. Publicação Contínua via GitHub Packages
-
-O fork conta com automação via GitHub Actions ([`.github/workflows/publish-github-packages.yml`](file:///Users/matheus.diniz_1/Documents/GitHub/scalar/.github/workflows/publish-github-packages.yml)) e o script [`scripts/prepare-github-packages.mjs`](file:///Users/matheus.diniz_1/Documents/GitHub/scalar/scripts/prepare-github-packages.mjs), que substitui o escopo `@scalar/` para `@mat-dgruber/` no momento da publicação:
-
-1. **Disparo Manual**:
-   - Acesse **Actions** no seu GitHub → **Publish to GitHub Packages** → **Run workflow**.
-2. **Disparo por Versão/Tag**:
-   ```bash
-   git tag v1.66.1-gemini
-   git push origin v1.66.1-gemini
-   ```
-
-### C. Consumindo os Pacotes nos Projetos da Empresa / Pessoais
-
-No projeto consumidor (FastAPI, Vue, React, Next.js, Node):
-
-1. **Configure o `.npmrc` na raiz do projeto**:
-   ```ini
-   @mat-dgruber:registry=https://npm.pkg.github.com
-   # Se o repositório for privado:
-   # //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-   ```
-
-2. **Instale o pacote de referência**:
-   ```bash
-   pnpm add @mat-dgruber/api-reference
-   # ou
-   npm install @mat-dgruber/api-reference
-   ```
-
-3. **Inicie o Scalar com suporte a Google Gemini**:
-
-   **Em aplicações JavaScript / TypeScript / Vue / React:**
-   ```typescript
-   import { createApiReference } from '@mat-dgruber/api-reference'
-   import '@mat-dgruber/api-reference/style.css'
-
-   createApiReference('#app', {
-     url: '/openapi.json',
-     agent: {
-       provider: 'gemini',
-       gemini: {
-         model: 'gemini-3.7-flash', // Padrão recomendado
-         apiKey: process.env.VITE_GEMINI_API_KEY, // Opcional (usuário pode informar via modal ⚙️ na UI)
-       },
-     },
-   })
-   ```
-
-   **Em aplicações FastAPI (usando CDN Standalone do Fork):**
-   ```python
-   from fastapi import FastAPI
-   from fastapi.responses import HTMLResponse
-
-   app = FastAPI(title="Minha API")
-
-
-   @app.get("/scalar", include_in_schema=False)
-   async def scalar_docs():
-       html_content = """
-       <!doctype html>
-       <html>
-         <head>
-           <title>Documentação da API</title>
-           <meta charset="utf-8" />
-           <meta name="viewport" content="width=device-width, initial-scale=1" />
-         </head>
-         <body>
-           <div id="app"></div>
-           <script src="https://cdn.jsdelivr.net/gh/mat-dgruber/scalar@main/packages/api-reference/dist/browser/standalone.js"></script>
-           <script>
-             Scalar.createApiReference('#app', {
-               url: '/openapi.json',
-               agent: {
-                 provider: 'gemini',
-                 gemini: {
-                   model: 'gemini-3.7-flash'
-                 }
-               }
-             })
-           </script>
-         </body>
-       </html>
-       """
-       return HTMLResponse(content=html_content)
-   ```
-
-### D. Modelos Suportados e Hierarquia de Configuração
-
-O seletor integrado permite os seguintes modelos pré-configurados (ou customizados):
-- **Frontier (3.x)**: `gemini-3.7-flash` (Padrão), `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.1-pro`, `gemini-3.1-flash-lite`.
-- **Stable (2.5)**: `gemini-2.5-pro`, `gemini-2.5-flash`.
-- **Custom**: Qualquer identificador de modelo fornecido pelo usuário.
-
-**Precedência de Resolução:** `localStorage (Modal ⚙️)` > `Props da Aplicação` > `Default (gemini-3.7-flash)`.
 
 
