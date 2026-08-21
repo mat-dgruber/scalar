@@ -19,6 +19,9 @@ Data       | Autor          | Descrição da Alteração
 2026-08-21 | Matheus Diniz  | Atualização v2.2.0: Adicionado guia de autenticação GitHub
            | (Antigravity)  | PAT para consumo dos pacotes @mat-dgruber pela equipe
            |                | e diretrizes de troubleshooting para Agentes de IA.
+2026-08-21 | Matheus Diniz  | Atualização v2.3.0: Adicionado guia de uso do Servidor
+           | (Antigravity)  | MCP (Model Context Protocol) nativo para integração de
+           |                | agentes de IA (Cursor, Claude Desktop, Gemini CLI).
 =================================================================================
 -->
 
@@ -231,6 +234,76 @@ O Scalar integrado com Gemini possui um seletor visual e persistência automáti
 - **Modelos Stable (2.5)**: `gemini-2.5-pro`, `gemini-2.5-flash`.
 - **Modelos Customizados**: Qualquer modelo suportado pela API do Google.
 - **Hierarquia de Precedência:** `localStorage (Configurado via modal ⚙️ pelo usuário)` > `Props passadas no código` > `Default (gemini-3.7-flash)`.
+
+---
+
+### E. Como Usar o Servidor MCP (Model Context Protocol) Nativo
+
+O Scalar possui suporte nativo ao **Model Context Protocol (MCP)**, permitindo que ferramentas e assistentes de IA (como **Cursor**, **Claude Desktop**, **Gemini CLI** e **Antigravity**) se conectem à sua API e utilizem seus endpoints como ferramentas (*tools*) executáveis de forma automática.
+
+#### 1. Endpoints do Servidor MCP:
+- **`POST /mcp`**: Endpoint JSON-RPC 2.0 padrão da indústria compatível com a especificação MCP (`initialize`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `ping`).
+- **`GET /mcp`**: Rota informativa e de descoberta com metadados do serviço.
+
+#### 2. Como Iniciar o Mock Server com Suporte MCP:
+
+Com a CLI do Scalar:
+```bash
+# Inicia o mock server e expõe o endpoint MCP na porta 5052
+npx @scalar/cli mock ./openapi.json --port 5052
+```
+
+Ou no seu backend Node/TypeScript com `@scalar/mock-server`:
+```typescript
+import { createMockServer } from '@scalar/mock-server'
+
+const app = await createMockServer({
+  specification: './openapi.json',
+})
+
+// O endpoint POST /mcp já estará disponível automaticamente!
+```
+
+#### 3. Como Conectar o MCP aos Assistentes de IA:
+
+##### 🤖 Cursor (Cursor MCP Settings):
+Adicione no seu arquivo `.cursor/mcp.json` ou nas configurações de MCP do Cursor:
+```json
+{
+  "mcpServers": {
+    "minha-api-scalar": {
+      "url": "http://localhost:5052/mcp"
+    }
+  }
+}
+```
+
+##### 🧠 Claude Desktop (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "minha-api-scalar": {
+      "url": "http://localhost:5052/mcp"
+    }
+  }
+}
+```
+
+##### ⚡ Gemini CLI / Antigravity (`mcp_config.json`):
+```json
+{
+  "mcpServers": {
+    "minha-api-scalar": {
+      "url": "http://localhost:5052/mcp"
+    }
+  }
+}
+```
+
+#### 4. O Que o Assistente de IA Consegue Fazer:
+1. **`tools/list`**: O assistente descobre automaticamente todos os endpoints da API (ex: `listUsers`, `createOrder`, `getPetById`) com seus parâmetros e esquemas tipados via JSON Schema.
+2. **`tools/call`**: O assistente pode executar chamadas de teste diretamente na API (recebendo dados mockados ou respostas do servidor com validação de payload).
+3. **`resources/read` (`openapi://specification`)**: O LLM pode ler a especificação OpenAPI completa da sua aplicação sob demanda para entender a arquitetura dos serviços.
 
 ---
 
