@@ -4,9 +4,18 @@ export type {
   PluginDocumentAuth,
   PluginSelectedSecurity,
 } from './api-reference-plugin'
+export {
+  agentConfigurationSchema,
+  agentProviderSchema,
+  baseConfigurationSchema,
+  geminiConfigSchema,
+  geminiModelSchema,
+} from './base-configuration'
 export type { ApiReferenceInstance, CreateApiReference } from './html-api'
 export type { HtmlRenderingConfiguration } from './html-rendering-configuration'
 export type {
+  AgentConfiguration,
+  AgentProvider,
   AnyApiReferenceConfiguration,
   ApiClientConfiguration,
   ApiReferenceBuiltInLocale,
@@ -24,6 +33,8 @@ export type {
   AuthenticationConfiguration,
   BaseConfiguration,
   ExternalUrls,
+  GeminiConfig,
+  GeminiModel,
   LifecycleHooks,
   ModelsSectionLabel,
   SecurityScheme,

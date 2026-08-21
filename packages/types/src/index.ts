@@ -2,6 +2,8 @@
  * We should not use these exports anymore, but we need them for commonjs compatibility.
  */
 export type {
+  AgentConfiguration,
+  AgentProvider,
   AnyApiReferenceConfiguration,
   ApiClientConfiguration,
   ApiReferenceConfiguration,
@@ -14,6 +16,8 @@ export type {
   BaseConfiguration,
   CreateApiReference,
   ExternalUrls,
+  GeminiConfig,
+  GeminiModel,
   HtmlRenderingConfiguration,
   LifecycleHooks,
   SecurityScheme,

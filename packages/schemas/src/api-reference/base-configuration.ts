@@ -1,5 +1,35 @@
 import { any, array, boolean, fn, literal, nullable, object, optional, string, union } from '@scalar/validation'
 
+export const geminiConfigSchema = object({
+  apiKey: optional(string(), { typeComment: 'Google Gemini API key' }),
+  model: optional(
+    union([
+      literal('gemini-3.7-flash'),
+      literal('gemini-3.6-flash'),
+      literal('gemini-3.5-flash'),
+      literal('gemini-3.1-pro'),
+      literal('gemini-3.1-flash-lite'),
+      literal('gemini-2.5-pro'),
+      literal('gemini-2.5-flash'),
+      string(),
+    ]),
+    { typeComment: 'Gemini model identifier. Defaults to gemini-3.7-flash' },
+  ),
+  baseUrl: optional(string(), { typeComment: 'Custom base URL or proxy URL for Gemini API' }),
+})
+
+export const agentConfigurationSchema = object({
+  provider: optional(union([literal('scalar'), literal('gemini')]), {
+    typeComment: 'AI Agent provider (scalar or gemini). Defaults to gemini.',
+  }),
+  key: optional(string(), {
+    typeComment: 'Scalar agent key or authentication token',
+  }),
+  gemini: optional(geminiConfigSchema, {
+    typeComment: 'Google Gemini specific configuration',
+  }),
+})
+
 const externalUrlsSchema = object(
   {
     dashboardUrl: string({ default: 'https://dashboard.scalar.com' }),
@@ -148,4 +178,7 @@ export const baseConfigurationSchema = object({
     typeComment: 'Enables / disables telemetry',
   }),
   externalUrls: externalUrlsSchema,
+  agent: optional(agentConfigurationSchema, {
+    typeComment: 'AI Agent configuration',
+  }),
 })

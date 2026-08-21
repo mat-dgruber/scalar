@@ -234,6 +234,30 @@ export type ExternalUrls = {
   apiBaseUrl: string
 }
 
+export type GeminiModel =
+  | 'gemini-3.7-flash'
+  | 'gemini-3.6-flash'
+  | 'gemini-3.5-flash'
+  | 'gemini-3.1-pro'
+  | 'gemini-3.1-flash-lite'
+  | 'gemini-2.5-pro'
+  | 'gemini-2.5-flash'
+  | (string & {})
+
+export type GeminiConfig = {
+  apiKey?: string
+  model?: GeminiModel
+  baseUrl?: string
+}
+
+export type AgentProvider = 'scalar' | 'gemini'
+
+export type AgentConfiguration = {
+  provider?: AgentProvider
+  key?: string
+  gemini?: GeminiConfig
+}
+
 export type BaseConfiguration = {
   /** The title of the OpenAPI document. */
   title?: string
@@ -336,6 +360,8 @@ export type BaseConfiguration = {
   telemetry: boolean
   /** External service URLs used by Scalar packages */
   externalUrls: ExternalUrls
+  /** AI Agent configuration */
+  agent?: AgentConfiguration
 }
 
 /** User-facing label for the components.schemas section in the sidebar, content, and search. */

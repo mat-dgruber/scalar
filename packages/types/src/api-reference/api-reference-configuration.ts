@@ -565,7 +565,7 @@ export type ApiReferenceConfiguration = ApiReferenceConfigurationRaw & {
 
 /** Configuration for the Api Reference */
 export const apiReferenceConfigurationWithSourceSchema: ZodType<
-  Omit<ApiReferenceConfiguration, 'url' | 'content'> & SourceConfiguration
+  Omit<ApiReferenceConfiguration, 'url' | 'content' | 'agent'> & SourceConfiguration
 > = apiReferenceConfigurationSchema.extend(sourceConfigurationSchema.shape).transform((configuration) => {
   // Migrate hideDownloadButton to documentDownloadType
   if (configuration.hideDownloadButton) {
