@@ -27,6 +27,7 @@ for (const dir of directoriesToScan) {
 }
 
 // Map of all packages and their versions
+const modifiedPackages = new Set()
 const packageVersions = new Map()
 
 for (const pkgPath of packageJsonPaths) {
