@@ -30,10 +30,12 @@ const {
         ? () => agentScalarConfiguration?.key ?? ''
         : undefined
     "
+    :geminiConfig="agentScalarConfiguration?.gemini"
     :hideAddApi="agentScalarConfiguration?.hideAddApi"
     :mode="agentScalarConfiguration?.key ? 'full' : 'preview'"
     :platformProxyUrl="externalUrls.proxyUrl"
     :prefilledMessage="prefilledMessage"
+    :provider="agentScalarConfiguration?.provider"
     :registryDocuments="[]"
     :registryUrl="externalUrls.registryUrl" />
 </template>

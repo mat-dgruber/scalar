@@ -85,6 +85,7 @@ type State = {
   workspaceStore: WorkspaceStore
   loading: ComputedRef<boolean>
   settingsModal: ModalState
+  agentSettingsModal: ModalState
   eventBus: WorkspaceEventBus
   proxyUrl: ComputedRef<string>
   proxyUrlRaw: Ref<string | undefined>
@@ -300,6 +301,7 @@ export function createState({
   }
 
   const settingsModal = useModal()
+  const agentSettingsModal = useModal()
 
   async function addDocument({
     namespace,
@@ -425,6 +427,7 @@ export function createState({
     eventBus,
     loading,
     settingsModal,
+    agentSettingsModal,
     config,
     registryUrl,
     dashboardUrl,
