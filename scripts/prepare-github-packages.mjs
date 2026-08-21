@@ -26,14 +26,21 @@ for (const dir of directoriesToScan) {
   }
 }
 
-// Map of all packages that will be transformed
-const modifiedPackages = new Set()
+// Map of all packages and their versions
+const packageVersions = new Map()
 
 for (const pkgPath of packageJsonPaths) {
   try {
     const content = JSON.parse(readFileSync(pkgPath, 'utf8'))
-    if (content.name && content.name.startsWith(`${SOURCE_SCOPE}/`)) {
-      modifiedPackages.add(content.name)
+    if (content.name) {
+      if (content.name.startsWith(`${SOURCE_SCOPE}/`)) {
+        modifiedPackages.add(content.name)
+      }
+      if (content.version) {
+        packageVersions.set(content.name, content.version)
+        const targetName = content.name.replace(SOURCE_SCOPE, TARGET_SCOPE)
+        packageVersions.set(targetName, content.version)
+      }
     }
   } catch (err) {
     console.error(`Error reading ${pkgPath}:`, err)
@@ -59,15 +66,30 @@ for (const pkgPath of packageJsonPaths) {
       registry: 'https://npm.pkg.github.com',
     }
 
-    // 3. Update dependencies
+    // 3. Update dependencies and resolve workspace:* protocol to explicit versions
     const depFields = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']
     for (const field of depFields) {
       if (pkg[field]) {
         for (const [depName, version] of Object.entries(pkg[field])) {
+          let resolvedVersion = version
+          const originalName = depName.startsWith(TARGET_SCOPE) ? depName.replace(TARGET_SCOPE, SOURCE_SCOPE) : depName
+
+          // Replace workspace protocol with real version
+          if (typeof version === 'string' && version.startsWith('workspace:')) {
+            const actualVer = packageVersions.get(originalName) || packageVersions.get(depName)
+            if (actualVer) {
+              resolvedVersion = version.startsWith('workspace:^') ? `^${actualVer}` : actualVer
+            } else {
+              resolvedVersion = 'latest'
+            }
+          }
+
           if (depName.startsWith(`${SOURCE_SCOPE}/`)) {
             const newDepName = depName.replace(SOURCE_SCOPE, TARGET_SCOPE)
-            pkg[field][newDepName] = version
+            pkg[field][newDepName] = resolvedVersion
             delete pkg[field][depName]
+          } else {
+            pkg[field][depName] = resolvedVersion
           }
         }
       }
