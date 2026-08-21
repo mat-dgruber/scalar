@@ -130,6 +130,8 @@ export const baseConfigurationSchema = object({
       literal('fastify'),
       literal('mars'),
       literal('laserwave'),
+      literal('harpia'),
+      literal('cinematicNoir'),
       literal('none'),
     ],
     {

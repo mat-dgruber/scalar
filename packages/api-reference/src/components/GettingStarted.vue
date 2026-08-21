@@ -27,6 +27,8 @@ const themeIds: ThemeId[] = [
   'kepler',
   'mars',
   'deepSpace',
+  'harpia',
+  'cinematicNoir',
 ]
 
 async function fetchExampleSpecification() {

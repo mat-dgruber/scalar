@@ -1,0 +1,76 @@
+/* basic theme */
+.light-mode {
+  --scalar-background-1: #ffffff;
+  --scalar-background-2: #f8fafc;
+  --scalar-background-3: #f1f5f9;
+
+  --scalar-color-1: #0f172a;
+  --scalar-color-2: #475569;
+  --scalar-color-3: #94a3b8;
+
+  --scalar-color-accent: #7c3aed;
+  --scalar-background-accent: #8b5cf61f;
+
+  --scalar-border-color: #e2e8f0;
+}
+
+.dark-mode {
+  --scalar-background-1: #0a0a0a;
+  --scalar-background-2: #131313;
+  --scalar-background-3: #1c1b1b;
+
+  --scalar-color-1: #ffffff;
+  --scalar-color-2: #e5e2e1;
+  --scalar-color-3: #958ea0;
+
+  --scalar-color-accent: #a078ff;
+  --scalar-background-accent: #8b5cf622;
+
+  --scalar-border-color: #2a2a2a;
+}
+
+/* Document Sidebar */
+.light-mode .t-doc__sidebar,
+.dark-mode .t-doc__sidebar {
+  --scalar-sidebar-background-1: var(--scalar-background-1);
+  --scalar-sidebar-color-1: var(--scalar-color-1);
+  --scalar-sidebar-color-2: var(--scalar-color-2);
+  --scalar-sidebar-border-color: var(--scalar-border-color);
+
+  --scalar-sidebar-item-hover-color: currentColor;
+  --scalar-sidebar-item-hover-background: var(--scalar-background-3);
+
+  --scalar-sidebar-item-active-background: var(--scalar-background-accent);
+  --scalar-sidebar-color-active: var(--scalar-color-accent);
+
+  --scalar-sidebar-search-background: var(--scalar-background-2);
+  --scalar-sidebar-search-color: var(--scalar-color-3);
+  --scalar-sidebar-search-border-color: var(--scalar-border-color);
+}
+
+/* Advanced / Functional Colors */
+.light-mode {
+  --scalar-color-green: #16a34a;
+  --scalar-color-red: #dc2626;
+  --scalar-color-yellow: #d97706;
+  --scalar-color-blue: #2563eb;
+  --scalar-color-orange: #ea580c;
+  --scalar-color-purple: #7c3aed;
+
+  --scalar-button-1: #7c3aed;
+  --scalar-button-1-hover: #6d28d9;
+  --scalar-button-1-color: #ffffff;
+}
+
+.dark-mode {
+  --scalar-color-green: #4ade80;
+  --scalar-color-red: #f87171;
+  --scalar-color-yellow: #fde047;
+  --scalar-color-blue: #60a5fa;
+  --scalar-color-orange: #fb923c;
+  --scalar-color-purple: #d0bcff;
+
+  --scalar-button-1: #8b5cf6;
+  --scalar-button-1-hover: #a078ff;
+  --scalar-button-1-color: #ffffff;
+}

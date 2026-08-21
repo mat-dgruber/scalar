@@ -162,6 +162,8 @@ export const baseConfigurationSchema = z.object({
       'fastify',
       'mars',
       'laserwave',
+      'harpia',
+      'cinematicNoir',
       'none',
     ])
     .optional()

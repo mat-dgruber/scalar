@@ -1,11 +1,13 @@
 import defaultFonts from './fonts/fonts.css?inline'
 import alternateTheme from './presets/alternate.css?inline'
 import bluePlanetTheme from './presets/bluePlanet.css?inline'
+import cinematicNoirTheme from './presets/cinematicNoir.css?inline'
 import customThemeStarter from './presets/custom-theme-starter.css?inline'
 import deepSpaceTheme from './presets/deepSpace.css?inline'
 import defaultTheme from './presets/default.css?inline'
 import elysiajsTheme from './presets/elysiajs.css?inline'
 import fastifyTheme from './presets/fastify.css?inline'
+import harpiaTheme from './presets/harpia.css?inline'
 import keplerTheme from './presets/kepler.css?inline'
 import laserwaveTheme from './presets/laserwave.css?inline'
 import marsTheme from './presets/mars.css?inline'
@@ -22,10 +24,12 @@ import { nanoid } from 'nanoid'
 export {
   alternateTheme,
   bluePlanetTheme,
+  cinematicNoirTheme,
   deepSpaceTheme,
   defaultTheme,
   elysiajsTheme,
   fastifyTheme,
+  harpiaTheme,
   keplerTheme,
   marsTheme,
   moonTheme,
@@ -70,6 +74,8 @@ export const themeIds = [
   'fastify',
   'mars',
   'laserwave',
+  'harpia',
+  'cinematicNoir',
   'none',
 ] as const
 
@@ -92,6 +98,8 @@ export const themeLabels = {
   mars: 'Mars',
   deepSpace: 'Deep Space',
   laserwave: 'Laserwave',
+  harpia: 'Harpia (Amazon Forest & Gold)',
+  cinematicNoir: 'Cinematic Noir (Studio Violet)',
   none: 'None',
 } as const satisfies Record<ThemeId, string>
 
@@ -180,6 +188,20 @@ export const presets = {
     description: 'Laserwave Scalar theme',
     theme: laserwaveTheme,
     slug: 'laserwave',
+  },
+  harpia: {
+    uid: 'hRp1a_AmazonGold_77504',
+    name: 'Harpia',
+    description: 'Harpia Amazon Forest & Gold theme',
+    theme: harpiaTheme,
+    slug: 'harpia',
+  },
+  cinematicNoir: {
+    uid: 'cN01r_StudioViolet_5691',
+    name: 'Cinematic Noir',
+    description: 'Cinematic Noir Studio Violet theme',
+    theme: cinematicNoirTheme,
+    slug: 'cinematic-noir',
   },
   elysiajs: {
     uid: 'nEVZkRmCylPkT0o9YJa7y',

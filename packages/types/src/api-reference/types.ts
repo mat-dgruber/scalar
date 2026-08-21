@@ -326,6 +326,8 @@ export type BaseConfiguration = {
     | 'fastify'
     | 'mars'
     | 'laserwave'
+    | 'harpia'
+    | 'cinematicNoir'
     | 'none'
   /** Integration type identifier */
   _integration?:
