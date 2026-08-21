@@ -5,6 +5,7 @@ import { ScalarTooltip } from '@scalar/components/tooltip'
 import {
   ScalarIconArrowUp,
   ScalarIconCheck,
+  ScalarIconGear,
   ScalarIconLockSimple,
   ScalarIconPlus,
   ScalarIconX,
@@ -227,14 +228,23 @@ const chatError = useChatError()
 
         <div class="inputActionsRight">
           <template v-if="!state.loading.value">
-            <ScalarTooltip content="Settings">
+            <ScalarTooltip content="Document Settings">
               <ScalarIconButton
                 class="settingsButton h-7 w-7 p-1.5"
                 :icon="ScalarIconLockSimple"
-                label="Scalar"
+                label="Document Settings"
                 size="md"
                 weight="bold"
                 @click="state.settingsModal.show()" />
+            </ScalarTooltip>
+            <ScalarTooltip content="Agent Settings">
+              <ScalarIconButton
+                class="settingsButton h-7 w-7 p-1.5"
+                :icon="ScalarIconGear"
+                label="Agent Settings"
+                size="md"
+                weight="bold"
+                @click="state.agentSettingsModal?.show()" />
             </ScalarTooltip>
           </template>
           <div class="sendCheckboxContinue">

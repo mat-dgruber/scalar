@@ -11,6 +11,7 @@ import { useCuratedDocuments } from '@/hooks/use-curated-documents'
 import { getTmpDocFromLocalStorage } from '@/hooks/use-upload-tmp-document'
 import { useState } from '@/state/state'
 import Layout from '@/views/Layout.vue'
+import AgentSettingsModal from '@/views/Settings/AgentSettingsModal.vue'
 import Settings from '@/views/Settings/Settings.vue'
 
 defineEmits<{
@@ -21,6 +22,7 @@ const {
   chat,
   prompt,
   settingsModal,
+  agentSettingsModal,
   eventBus,
   workspaceStore,
   config,
@@ -74,4 +76,7 @@ async function handleSubmit() {
     @submit="handleSubmit"
     @uploadApi="$emit('uploadApi')" />
   <Settings :modalState="settingsModal" />
+  <AgentSettingsModal
+    v-if="agentSettingsModal"
+    :modalState="agentSettingsModal" />
 </template>
