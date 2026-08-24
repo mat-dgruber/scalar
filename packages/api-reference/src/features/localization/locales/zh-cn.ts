@@ -143,6 +143,7 @@ export const zhCn = {
   mcp: {
     generate: '生成 MCP',
     connect: '连接 MCP',
+    copied: 'MCP 服务器 URL 已复制到剪贴板！',
   },
   developerTools: {
     title: '开发者工具',

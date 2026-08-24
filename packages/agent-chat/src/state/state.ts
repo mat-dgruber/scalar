@@ -120,6 +120,7 @@ function createChat({
   proxyUrl,
   getAccessToken,
   getAgentKey,
+  getActiveDocumentJson,
   provider,
   geminiConfig,
 }: {
@@ -129,6 +130,7 @@ function createChat({
   proxyUrl: ComputedRef<string>
   getAccessToken?: () => string
   getAgentKey?: () => string
+  getActiveDocumentJson?: () => string
   provider?: AgentProvider
   geminiConfig?: GeminiConfig
 }) {
@@ -143,6 +145,39 @@ function createChat({
             apiKey: () => getEffectiveGeminiConfig(geminiConfig).apiKey,
             model: () => getEffectiveGeminiConfig(geminiConfig).model,
             baseUrl: () => getEffectiveGeminiConfig(geminiConfig).baseUrl,
+            systemInstruction: () => {
+              const effectiveConfig = getEffectiveGeminiConfig(geminiConfig)
+              const userCustomInstruction = effectiveConfig.systemInstruction?.trim()
+
+              let openApiDoc = ''
+              if (getActiveDocumentJson) {
+                try {
+                  openApiDoc = getActiveDocumentJson() || ''
+                } catch (err) {
+                  console.warn('[AGENT] Failed to get active OpenAPI document:', err)
+                }
+              }
+
+              const instructions: string[] = [
+                'You are an expert AI technical assistant and developer advocate built into the Scalar Interactive API Reference documentation.',
+                'Your primary role is to assist developers in understanding, exploring, consuming, and integrating with this specific API.',
+                'Base your answers directly on the OpenAPI specification provided below. Accurately describe available endpoints, HTTP methods, path and query parameters, request bodies, response statuses, schemas, authentication requirements, and error handling.',
+                'When answering, be clear, concise, and helpful. Always provide relevant, accurate, and ready-to-run code snippets (such as curl, Python, TypeScript/JavaScript) where helpful.',
+                'If the user asks questions in Portuguese or any other language, respond in that same language while keeping technical parameters, HTTP verbs, and endpoint paths exact.',
+              ]
+
+              if (userCustomInstruction) {
+                instructions.push(userCustomInstruction)
+              }
+
+              if (openApiDoc && openApiDoc.trim().length > 0) {
+                instructions.push(
+                  '### Current Target API OpenAPI Specification:\n```json\n' + openApiDoc.trim() + '\n```',
+                )
+              }
+
+              return instructions.join('\n\n')
+            },
           })
         : new DefaultChatTransport({
             api: `${baseUrl}/vector/openapi/chat`,
@@ -264,6 +299,7 @@ export function createState({
     proxyUrl,
     getAccessToken,
     getAgentKey,
+    getActiveDocumentJson,
     provider,
     geminiConfig,
   })

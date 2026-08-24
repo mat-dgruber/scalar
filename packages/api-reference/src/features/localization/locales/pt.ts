@@ -144,6 +144,7 @@ export const pt = {
   mcp: {
     generate: 'Gerar MCP',
     connect: 'Conectar MCP',
+    copied: 'URL do servidor MCP copiada para a área de transferência!',
   },
   developerTools: {
     title: 'Ferramentas de Desenvolvedor',

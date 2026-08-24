@@ -1,15 +1,22 @@
 {
   "name": "@scalar/mcp-server",
   "description": "Servidor MCP (Model Context Protocol) autônomo e extensível para OpenClaude e Antigravity",
+  "license": "MIT",
+  "author": "Scalar (https://github.com/scalar)",
+  "homepage": "https://github.com/scalar/scalar",
+  "bugs": "https://github.com/scalar/scalar/issues/new/choose",
   "version": "1.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "tsx src/index.ts"
+  },
   "type": "module",
   "main": "src/index.ts",
-  "scripts": {
-    "dev": "tsx src/index.ts",
-    "start": "tsx src/index.ts",
-    "build": "tsc -p tsconfig.json"
-  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "catalog:*",
     "zod": "catalog:*"
@@ -17,5 +24,10 @@
   "devDependencies": {
     "@types/node": "catalog:*",
     "tsx": "catalog:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scalar/scalar.git",
+    "directory": "packages/mcp-server"
   }
 }

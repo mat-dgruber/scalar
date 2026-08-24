@@ -33,7 +33,11 @@ import {
   scrollSidebarToTop,
   type Item,
 } from '@scalar/sidebar'
-import { getThemeStyles, hasObtrusiveScrollbars } from '@scalar/themes'
+import {
+  getThemeStyles,
+  hasObtrusiveScrollbars,
+  type ThemeId,
+} from '@scalar/themes'
 import {
   DEFAULT_MODELS_SECTION_LABEL,
   type AnyApiReferenceConfiguration,
@@ -165,8 +169,20 @@ const isDevelopment = import.meta.env.DEV
  * avoid a hydration mismatch on the root class.
  */
 const obtrusiveScrollbars = ref(false)
+const handleThemeStorage = (e: StorageEvent) => {
+  if (e.key === 'scalar_theme' && e.newValue) {
+    configurationOverrides.value = {
+      ...configurationOverrides.value,
+      theme: e.newValue as any,
+    }
+  }
+}
+
 onMounted(() => {
   obtrusiveScrollbars.value = hasObtrusiveScrollbars()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', handleThemeStorage)
+  }
 })
 
 const eventBus = createWorkspaceEventBus({ debug: isDevelopment })
@@ -284,9 +300,14 @@ watch(activeSlug, () => {
 })
 
 /** Configuration overrides to apply to the selected document (from the localhost toolbar) */
+const initialStoredTheme =
+  typeof window !== 'undefined'
+    ? (window.localStorage?.getItem('scalar_theme') as ThemeId | null)
+    : null
+
 const configurationOverrides = ref<
   Partial<Omit<ApiReferenceConfiguration, 'slug' | 'title' | ''>>
->({})
+>(initialStoredTheme ? { theme: initialStoredTheme } : {})
 
 const withLocalizedConfigurationDefaults = (
   config: ApiReferenceConfiguration,
@@ -356,15 +377,7 @@ const basePath = computed(() => mergedConfig.value.pathRouting?.basePath)
 const getSidebarItemHref = (item: Item): string =>
   makeHrefFromId(item.id, basePath.value, isMultiDocument.value)
 
-const activeTheme = computed(() => {
-  if (typeof window !== 'undefined') {
-    const storedTheme = window.localStorage?.getItem('scalar_theme')
-    if (storedTheme) {
-      return storedTheme as any
-    }
-  }
-  return mergedConfig.value.theme
-})
+const activeTheme = computed(() => mergedConfig.value.theme)
 
 const themeStyle = computed(() =>
   getThemeStyles(activeTheme.value, {
@@ -1371,6 +1384,9 @@ onMounted(async () => {
   })
 })
 onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('storage', handleThemeStorage)
+  }
   stopPreloadingDocuments()
   pluginManager.notifyDestroy()
   apiClient.value?.app.unmount()

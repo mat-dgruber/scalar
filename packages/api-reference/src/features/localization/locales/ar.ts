@@ -143,6 +143,7 @@ export const ar = {
   mcp: {
     generate: 'إنشاء MCP',
     connect: 'ربط MCP',
+    copied: 'تم نسخ رابط خادم MCP إلى الحافظة!',
   },
   developerTools: {
     title: 'أدوات المطورين',

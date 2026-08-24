@@ -143,6 +143,7 @@ export const es = {
   mcp: {
     generate: 'Generar MCP',
     connect: 'Conectar MCP',
+    copied: '¡URL del servidor MCP copiada al portapapeles!',
   },
   developerTools: {
     title: 'Herramientas de desarrollo',

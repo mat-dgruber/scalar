@@ -144,6 +144,7 @@ export const fr = {
   mcp: {
     generate: 'Générer MCP',
     connect: 'Connecter MCP',
+    copied: 'URL du serveur MCP copiée dans le presse-papiers !',
   },
   developerTools: {
     title: 'Outils de développement',

@@ -144,6 +144,7 @@ export const de = {
   mcp: {
     generate: 'MCP generieren',
     connect: 'MCP verbinden',
+    copied: 'MCP-Server-URL in die Zwischenablage kopiert!',
   },
   developerTools: {
     title: 'Entwicklertools',

@@ -248,6 +248,7 @@ export type GeminiConfig = {
   apiKey?: string
   model?: GeminiModel
   baseUrl?: string
+  systemInstruction?: string
 }
 
 export type AgentProvider = 'scalar' | 'gemini'
@@ -529,6 +530,7 @@ export type ApiReferenceTranslations = {
   mcp: {
     generate: string
     connect: string
+    copied: string
   }
   developerTools: {
     title: string

@@ -144,6 +144,7 @@ export const ru = {
   mcp: {
     generate: 'Создать MCP',
     connect: 'Подключить MCP',
+    copied: 'URL MCP-сервера скопирован в буфер обмена!',
   },
   developerTools: {
     title: 'Инструменты разработчика',

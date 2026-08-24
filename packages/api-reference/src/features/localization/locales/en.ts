@@ -143,6 +143,7 @@ export const en = {
   mcp: {
     generate: 'Generate MCP',
     connect: 'Connect MCP',
+    copied: 'MCP server URL copied to clipboard!',
   },
   developerTools: {
     title: 'Developer Tools',
