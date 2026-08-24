@@ -10,10 +10,13 @@ import {
   ScalarIconPlus,
   ScalarIconX,
 } from '@scalar/icons'
-import { computed, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 
 import ActionsDropdown from '@/components/ActionsDropdown.vue'
 import ApprovalSection from '@/components/ApprovalSection.vue'
+import EndpointMentionDropdown, {
+  type EndpointOption,
+} from '@/components/EndpointMentionDropdown.vue'
 import ErrorMessageMessage from '@/components/ErrorMessage.vue'
 import FreeMessagesInfoSection from '@/components/FreeMessagesInfoSection.vue'
 import PaymentSection from '@/components/PaymentSection.vue'
@@ -43,6 +46,125 @@ const promptTooLarge = computed(
   () => state.prompt.value.trim().length > MAX_PROMPT_SIZE,
 )
 
+/** Endpoints extraídos dinamicamente do OpenAPI ativo */
+const availableEndpoints = computed<EndpointOption[]>(() => {
+  try {
+    const jsonStr = state.getActiveDocumentJson?.()
+    if (!jsonStr) return []
+    const parsed = JSON.parse(jsonStr)
+    if (!parsed?.paths || typeof parsed.paths !== 'object') return []
+    const list: EndpointOption[] = []
+    for (const [path, methods] of Object.entries(
+      parsed.paths as Record<string, any>,
+    )) {
+      if (!methods || typeof methods !== 'object') continue
+      for (const [method, op] of Object.entries(
+        methods as Record<string, any>,
+      )) {
+        const httpMethod = method.toUpperCase()
+        if (
+          ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'].includes(
+            httpMethod,
+          )
+        ) {
+          list.push({
+            method: httpMethod,
+            path,
+            summary: (op?.summary || op?.description || '') as string,
+            tag: op?.tags?.[0] as string | undefined,
+          })
+        }
+      }
+    }
+    return list
+  } catch {
+    return []
+  }
+})
+
+/** Estado do Autocomplete de Menção (@ ou /) */
+const showMentionDropdown = ref(false)
+const mentionQuery = ref('')
+const mentionStartIndex = ref(0)
+const selectedMentionIndex = ref(0)
+
+const filteredEndpoints = computed(() => {
+  const q = mentionQuery.value.toLowerCase().trim()
+  if (!q) {
+    return availableEndpoints.value.slice(0, 8)
+  }
+  return availableEndpoints.value
+    .filter(
+      (e) =>
+        e.path.toLowerCase().includes(q) ||
+        e.summary.toLowerCase().includes(q) ||
+        e.method.toLowerCase().includes(q) ||
+        e.tag?.toLowerCase().includes(q),
+    )
+    .slice(0, 8)
+})
+
+function checkMentionTrigger() {
+  if (!promptRef.value) return
+  const textarea = promptRef.value
+  const cursor = textarea.selectionStart
+  const textBeforeCursor = textarea.value.slice(0, cursor)
+
+  // Detecta @ ou / no início da linha ou após espaço
+  const match = textBeforeCursor.match(/(?:^|\s)([@/])([^\s]*)$/)
+  if (match && availableEndpoints.value.length > 0) {
+    const query = match[2] ?? ''
+    mentionQuery.value = query
+    mentionStartIndex.value = cursor - query.length - 1
+    showMentionDropdown.value = true
+    selectedMentionIndex.value = 0
+  } else {
+    showMentionDropdown.value = false
+  }
+}
+
+function selectMentionEndpoint(endpoint: EndpointOption) {
+  if (!promptRef.value) return
+  const textarea = promptRef.value
+  const cursor = textarea.selectionStart
+  const before = textarea.value.slice(0, mentionStartIndex.value)
+  const after = textarea.value.slice(cursor)
+
+  const summaryPart = endpoint.summary ? ` (${endpoint.summary})` : ''
+  const tag = `[Endpoint: ${endpoint.method} ${endpoint.path}${summaryPart}] `
+
+  state.prompt.value = before + tag + after
+  showMentionDropdown.value = false
+
+  nextTick(() => {
+    const newPos = before.length + tag.length
+    textarea.focus()
+    textarea.setSelectionRange(newPos, newPos)
+  })
+}
+
+function openMentionPicker() {
+  if (!promptRef.value) return
+  const textarea = promptRef.value
+  const cursor = textarea.selectionStart
+  const before = textarea.value.slice(0, cursor)
+  const after = textarea.value.slice(cursor)
+
+  state.prompt.value =
+    before + (before.endsWith(' ') || !before ? '@' : ' @') + after
+  mentionQuery.value = ''
+  mentionStartIndex.value =
+    before.length + (before.endsWith(' ') || !before ? 0 : 1)
+  showMentionDropdown.value = true
+  selectedMentionIndex.value = 0
+
+  nextTick(() => {
+    const newPos = mentionStartIndex.value + 1
+    textarea.focus()
+    textarea.setSelectionRange(newPos, newPos)
+  })
+}
+
 /** Show free messages info only after at least one message has been sent and when no API key is set. */
 const showFreeMessagesInfo = computed(
   () =>
@@ -66,11 +188,38 @@ watch(state.prompt, () => {
 })
 
 function handlePromptKeydown(e: KeyboardEvent) {
-  // Ignore the Enter that only commits an IME composition (e.g. Japanese, Chinese,
-  // Korean). On macOS Chrome that keydown still reports key === 'Enter' with
-  // isComposing === true, so without this guard the message sends mid-composition.
   if (e.isComposing) {
     return
+  }
+
+  // Interceptação de navegação e seleção no Dropdown de Menção
+  if (showMentionDropdown.value && filteredEndpoints.value.length > 0) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      selectedMentionIndex.value =
+        (selectedMentionIndex.value + 1) % filteredEndpoints.value.length
+      return
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      selectedMentionIndex.value =
+        (selectedMentionIndex.value - 1 + filteredEndpoints.value.length) %
+        filteredEndpoints.value.length
+      return
+    }
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault()
+      const target = filteredEndpoints.value[selectedMentionIndex.value]
+      if (target) {
+        selectMentionEndpoint(target)
+      }
+      return
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      showMentionDropdown.value = false
+      return
+    }
   }
 
   if (state.loading.value) {
@@ -152,6 +301,13 @@ const chatError = useChatError()
 
 <template>
   <div class="actionContainer">
+    <!-- Popover Autocomplete de Endpoints (@ ou /) -->
+    <EndpointMentionDropdown
+      v-if="showMentionDropdown"
+      :endpoints="filteredEndpoints"
+      :selectedIndex="selectedMentionIndex"
+      @select="selectMentionEndpoint" />
+
     <UploadSection
       v-if="uploadTmpDoc.uploadState.value || isPending"
       :uploadState="uploadTmpDoc.uploadState.value ?? { type: 'loading' }" />
@@ -179,10 +335,23 @@ const chatError = useChatError()
         class="prompt custom-scroll"
         :disabled="state.loading.value"
         name="prompt"
-        placeholder="Ask me anything…"
+        placeholder="Pergunte sobre a API ou use @ ou / para marcar um endpoint..."
+        @input="checkMentionTrigger"
         @keydown="handlePromptKeydown" />
       <div class="inputActionsContainer">
         <div class="inputActionsLeft">
+          <!-- Botão de Atalho para Marcar Endpoint (@) -->
+          <ScalarTooltip content="Marcar Endpoint (@ ou /)">
+            <button
+              v-if="availableEndpoints.length"
+              class="mentionTriggerBtn"
+              type="button"
+              @click="openMentionPicker">
+              <span class="mentionSymbol">@</span>
+              <span class="mentionLabel">Endpoint</span>
+            </button>
+          </ScalarTooltip>
+
           <template v-if="!state.hideAddApi">
             <SearchPopover v-if="!state.isLoggedIn?.value">
               <button
@@ -358,6 +527,38 @@ const chatError = useChatError()
   display: flex;
   gap: 5px;
   position: relative;
+}
+
+.mentionTriggerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--scalar-radius-full);
+  background: var(--scalar-background-2);
+  border: var(--scalar-border-width) solid var(--scalar-border-color);
+  color: var(--scalar-color-2);
+  font-size: var(--scalar-font-size-3);
+  font-weight: var(--scalar-semibold);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 1;
+}
+
+.mentionTriggerBtn:hover {
+  background: var(--scalar-background-3);
+  border-color: var(--scalar-color-accent);
+  color: var(--scalar-color-1);
+}
+
+.mentionSymbol {
+  color: var(--scalar-color-accent);
+  font-weight: var(--scalar-bold);
+}
+
+.mentionLabel {
+  font-size: var(--scalar-mini);
 }
 
 .apiPill {
