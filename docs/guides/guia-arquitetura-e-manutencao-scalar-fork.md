@@ -71,6 +71,9 @@ O fork `@mat-dgruber/scalar` adiciona recursos fundamentais para ambientes corpo
 | :--- | :---: | :---: |
 | **IA Assistant (Chat)** | Apenas backend proprietário pago da Scalar | **Google Gemini Nativo (BYOK)** + Model Selector |
 | **Contexto OpenAPI na IA** | Servidor de embeddings da nuvem | **Injeção Dinâmica em Tempo Real** via `systemInstruction` |
+| **Ask AI Agent por Rota** | Apenas abre o chat genérico sem contexto | **Injeção Automática de Metadados** `[Endpoint: METODO /path]` |
+| **Menções no Chat (@ e /)** | Inexistente (digitação manual) | **Autocomplete de Endpoints** com badges de método e navegação por setas |
+| **Botão MCP na UI** | Redirecionamento para cadastro em nuvem | **Ações Locais para OpenClaude & Antigravity** + Deep Links |
 | **Servidor MCP Autônomo** | Registros e proxies em cloud externa | **@scalar/mcp-server Stdio Local Zero-Trust** (OpenClaude & Antigravity) |
 | **Acesso em VPN/Intranet** | Desativava Dev Tools e Agent em IPs privados | **Suporte Completo a RFC 1918** (`10.x`, `192.168.x`, `172.16-31.x`) |
 | **Reatividade de Temas** | Exigia reload da página ao trocar tema | **Reatividade Instantânea no DOM** + Sync Multi-Abas |
@@ -271,3 +274,28 @@ npx -y tsc -p packages/mcp-server/tsconfig.json --noEmit
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}' | npx -y tsx packages/mcp-server/src/index.ts
 ```
 
+---
+
+## 🎨 9. Engenharia de Frontend: DX de IA e MCP na Interface
+
+Três componentes-chave foram desenhados e implementados para proporcionar uma experiência de desenvolvimento de primeira classe (DX):
+
+### 1. `OpenMCPButton.vue` (`packages/api-reference/src/components/AgentScalar/`)
+
+- Substituiu redirecionamentos de nuvem fechada por atalhos diretos e amigáveis para ferramentas locais:
+  - **Antigravity (MCP)**: Gera e copia o bloco de configuração `mcpServers` com comando `npx -y tsx` e variáveis de ambiente pré-preenchidas.
+  - **OpenClaude (CLI)**: Gera e copia o comando CLI `claude mcp add [server-name] --scope user -- npx -y tsx [path]`.
+  - **Deep Links Nativos**: Links diretos `vscode:mcp/install` e `cursor://...` para desenvolvedores que preferem extensões gráficas.
+
+### 2. `AskAgentButton.vue` (`packages/api-reference/src/features/ask-agent-button/`)
+
+- Integrado diretamente nos layouts de operação (`ModernLayout.vue`).
+- Constrói prompts enriquecidos com metadados: `[Endpoint: {METHOD} {/path} ({Summary})] {pergunta}`.
+- Ao clicar no botão sem texto digitado, abre o assistente disparando automaticamente uma consulta técnica completa sobre a rota.
+
+### 3. `EndpointMentionDropdown.vue` e `PromptForm.vue` (`packages/agent-chat/`)
+
+- Sistema reativo de menções acionado pelos caracteres `@` ou `/` no input de texto do chat.
+- Mapeia em tempo real a árvore de rotas OpenAPI ativa (`getActiveDocumentJson().paths`).
+- Exibe badges coloridos de métodos HTTP (`GET`, `POST`, `PUT`, `DELETE`) e resumos de cada operação.
+- Suporta navegação fluida por teclado (`ArrowUp`, `ArrowDown`, `Enter`, `Escape`), inserindo automaticamente a referência do endpoint no prompt.

@@ -1,17 +1,35 @@
-const SENSITIVE_HEADER_KEYS = ['authorization', 'x-api-key', 'api-key', 'cookie', 'set-cookie']
+const SENSITIVE_HEADER_KEYS = [
+  'authorization',
+  'x-api-key',
+  'api-key',
+  'cookie',
+  'set-cookie',
+  'proxy-authorization',
+  'x-auth-token',
+]
 
-const SENSITIVE_PAYLOAD_KEYS = ['password', 'secret', 'token', 'api_key', 'apikey', 'client_secret', 'private_key']
+const SENSITIVE_PAYLOAD_KEYS = [
+  'password',
+  'secret',
+  'token',
+  'api_key',
+  'apikey',
+  'client_secret',
+  'private_key',
+  'access_token',
+  'refresh_token',
+  'id_token',
+  'jwt',
+  'session_id',
+  'session',
+  'credential',
+]
 
-export function maskSecret(value: string, visibleChars = 3): string {
+export function maskSecret(value: string): string {
   if (!value || typeof value !== 'string') {
     return '***'
   }
-  if (value.length <= visibleChars * 2) {
-    return '***'
-  }
-  const start = value.slice(0, visibleChars)
-  const end = value.slice(-visibleChars - 1)
-  return `${start}...${end}`
+  return '***'
 }
 
 export function sanitizeHeaders(headers: Record<string, string>): Record<string, string> {

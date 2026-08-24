@@ -2,10 +2,10 @@
   "mcpServers": {
     "meu-mcp-server": {
       "command": "npx",
-      "args": ["-y", "tsx", "/Users/matheus.diniz_1/Documents/GitHub/scalar/packages/mcp-server/src/index.ts"],
+      "args": ["-y", "tsx", "packages/mcp-server/src/index.ts"],
       "env": {
         "INTERNAL_API_URL": "http://localhost:5052",
-        "INTERNAL_API_TOKEN": "local-dev-token"
+        "INTERNAL_API_TOKEN": "${INTERNAL_API_TOKEN:-dev}"
       }
     }
   }

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { nextTick, watch } from 'vue'
+
 export interface EndpointOption {
   method: string
   path: string
@@ -14,6 +16,19 @@ const { endpoints, selectedIndex = 0 } = defineProps<{
 const emit = defineEmits<{
   (e: 'select', endpoint: EndpointOption): void
 }>()
+
+// Garante que o item selecionado por teclado esteja sempre visível na rolagem
+watch(
+  () => selectedIndex,
+  () => {
+    nextTick(() => {
+      const activeEl = document.querySelector(
+        '.mention-item.is-selected',
+      ) as HTMLElement | null
+      activeEl?.scrollIntoView({ block: 'nearest' })
+    })
+  },
+)
 
 function getMethodClass(method: string) {
   const m = method.toUpperCase()
@@ -34,7 +49,10 @@ function getMethodClass(method: string) {
 </script>
 
 <template>
-  <div class="mention-dropdown custom-scroll">
+  <div
+    aria-label="Sugestões de Endpoints"
+    class="mention-dropdown custom-scroll"
+    role="listbox">
     <div class="mention-header">
       <span>Endpoints da API</span>
       <span class="mention-hint">↑↓ navegar • Enter selecionar</span>
@@ -44,9 +62,12 @@ function getMethodClass(method: string) {
       class="mention-list">
       <li
         v-for="(item, index) in endpoints"
+        :id="`mention-item-${index}`"
         :key="`${item.method}-${item.path}`"
+        :aria-selected="index === selectedIndex"
         class="mention-item"
         :class="{ 'is-selected': index === selectedIndex }"
+        role="option"
         @click="emit('select', item)">
         <span
           class="method-badge"

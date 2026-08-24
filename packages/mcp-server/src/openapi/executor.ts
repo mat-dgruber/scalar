@@ -23,15 +23,30 @@ export interface ExecutionResult {
 export async function executeApiRequest(params: RequestExecutionParams): Promise<ExecutionResult> {
   const envConfig = params.ambiente ? listEnvironments()[params.ambiente] || getConfig() : getConfig()
 
-  let urlStr = `${envConfig.url.replace(/\/$/, '')}/${params.endpoint.replace(/^\//, '')}`
+  let targetUrl: URL
+  try {
+    const base = new URL(envConfig.url.endsWith('/') ? envConfig.url : `${envConfig.url}/`)
+    targetUrl = new URL(params.endpoint.replace(/^\/+/, ''), base)
+    // Prevenção de Path Traversal ou desvio de origem
+    if (targetUrl.origin !== base.origin) {
+      throw new Error(`Endpoint não autorizado fora da origem configurada: ${targetUrl.origin}`)
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('Endpoint não autorizado')) {
+      throw e
+    }
+    const cleanBase = envConfig.url.replace(/\/$/, '')
+    const cleanEndpoint = params.endpoint.replace(/^\//, '')
+    targetUrl = new URL(`${cleanBase}/${cleanEndpoint}`)
+  }
 
   if (params.params && Object.keys(params.params).length > 0) {
-    const query = new URLSearchParams()
     for (const [k, v] of Object.entries(params.params)) {
-      query.append(k, String(v))
+      targetUrl.searchParams.append(k, String(v))
     }
-    urlStr += `?${query.toString()}`
   }
+
+  const urlStr = targetUrl.toString()
 
   const reqHeaders: Record<string, string> = {
     'Content-Type': 'application/json',

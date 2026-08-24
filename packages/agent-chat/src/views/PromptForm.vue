@@ -18,7 +18,6 @@ import EndpointMentionDropdown, {
   type EndpointOption,
 } from '@/components/EndpointMentionDropdown.vue'
 import ErrorMessageMessage from '@/components/ErrorMessage.vue'
-import FreeMessagesInfoSection from '@/components/FreeMessagesInfoSection.vue'
 import PaymentSection from '@/components/PaymentSection.vue'
 import SearchPopover from '@/components/SearchPopover.vue'
 import UploadSection from '@/components/UploadSection.vue'
@@ -164,14 +163,6 @@ function openMentionPicker() {
     textarea.setSelectionRange(newPos, newPos)
   })
 }
-
-/** Show free messages info only after at least one message has been sent and when no API key is set. */
-const showFreeMessagesInfo = computed(
-  () =>
-    state.chat.messages.length > 1 &&
-    !state.getAgentKey?.() &&
-    chatError?.value?.code !== AgentErrorCodes.LIMIT_REACHED,
-)
 
 watch(state.prompt, () => {
   if (!promptRef?.value) {
@@ -319,7 +310,6 @@ const chatError = useChatError()
       @approve="respondToRequestApprovals(true)"
       @reject="respondToRequestApprovals(false)" />
     <PaymentSection v-if="chatError?.code === AgentErrorCodes.LIMIT_REACHED" />
-    <FreeMessagesInfoSection v-if="showFreeMessagesInfo" />
     <form
       class="promptForm"
       @submit.prevent="handleSubmit">
@@ -332,6 +322,13 @@ const chatError = useChatError()
         id="agentTextarea"
         ref="agentPrompt"
         v-model="state.prompt.value"
+        :aria-activedescendant="
+          showMentionDropdown
+            ? `mention-item-${selectedMentionIndex}`
+            : undefined
+        "
+        aria-autocomplete="list"
+        :aria-expanded="showMentionDropdown"
         class="prompt custom-scroll"
         :disabled="state.loading.value"
         name="prompt"

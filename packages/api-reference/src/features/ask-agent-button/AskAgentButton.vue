@@ -63,7 +63,7 @@ function handleContainerClick(event: MouseEvent) {
     @click="handleContainerClick"
     @submit.prevent="handleSubmit()">
     <ScalarIconSparkle
-      class="size-3 shrink-0"
+      class="size-3.5 shrink-0"
       weight="fill" />
     <div class="ask-agent-scalar-input-label">
       {{ translate('agent.askAiAgent') }}
@@ -76,9 +76,10 @@ function handleContainerClick(event: MouseEvent) {
       :placeholder="translate('agent.askAiAgent')" />
     <button
       class="ask-agent-scalar-send"
-      type="submit">
+      type="submit"
+      title="Enviar pergunta para o AI Agent">
       <ScalarIconArrowUp
-        class="size-3"
+        class="size-3.5"
         weight="bold" />
     </button>
   </form>
@@ -92,11 +93,16 @@ function handleContainerClick(event: MouseEvent) {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 1px 6px;
-  margin-right: 4px;
+  padding: 2px 8px;
+  margin-right: 6px;
   border-radius: var(--scalar-radius);
   z-index: 2;
-  height: 100%;
+  height: 24px;
+  min-width: 145px;
+  transition:
+    min-width 0.2s ease,
+    background 0.15s ease,
+    outline 0.15s ease;
 }
 .agent-button-container:hover:not(:focus-within) {
   background: color-mix(in srgb, var(--scalar-background-3), white 20%);
@@ -106,6 +112,7 @@ function handleContainerClick(event: MouseEvent) {
   cursor: text;
   background: var(--scalar-background-1);
   outline: 1px solid var(--scalar-color-accent);
+  min-width: 280px;
 }
 .dark-mode .agent-button-container {
   background: color-mix(in srgb, var(--scalar-background-3), black 15%);
@@ -127,11 +134,14 @@ function handleContainerClick(event: MouseEvent) {
   height: 100%;
   opacity: 0;
   cursor: pointer;
-  padding-left: 21px;
-  padding-right: 20px;
+  padding-left: 24px;
+  padding-right: 26px;
   font-size: var(--scalar-mini);
   color: var(--scalar-color-1);
   outline: none;
+  background: transparent;
+  border: none;
+  font-family: var(--scalar-font);
 }
 .ask-agent-scalar-input-not-empty,
 .ask-agent-scalar-input:focus {
@@ -145,7 +155,8 @@ function handleContainerClick(event: MouseEvent) {
   font-size: var(--scalar-mini);
   white-space: nowrap;
   user-select: none;
-  padding-left: 3px;
+  padding-left: 4px;
+  color: var(--scalar-color-2);
 }
 .ask-agent-scalar-input-not-empty + .ask-agent-scalar-input-label,
 .agent-button-container:focus-within .ask-agent-scalar-input-label {
@@ -155,15 +166,28 @@ function handleContainerClick(event: MouseEvent) {
 /** Send Button */
 .ask-agent-scalar-send {
   position: absolute;
-  right: 0;
+  right: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  aspect-ratio: 1;
+  height: 18px;
+  width: 18px;
+  border-radius: var(--scalar-radius);
+  background: var(--scalar-background-3);
   opacity: 0;
   pointer-events: none;
   cursor: pointer;
+  border: none;
+  padding: 0;
+  color: var(--scalar-color-1);
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.ask-agent-scalar-send:hover {
+  background: var(--scalar-color-accent);
+  color: #ffffff;
 }
 .ask-agent-scalar-input-not-empty ~ .ask-agent-scalar-send,
 .agent-button-container:focus-within .ask-agent-scalar-send {

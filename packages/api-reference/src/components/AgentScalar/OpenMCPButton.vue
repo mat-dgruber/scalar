@@ -66,6 +66,19 @@ const vscodeLink = computed(() => {
   return `vscode:mcp/install?${encodeURIComponent(JSON.stringify(effectiveConfig.value))}`
 })
 
+function sanitizeServerName(name: string): string {
+  return (
+    name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // remove acentos e diacríticos
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '-') // substitui caracteres não-alfanuméricos por hífen
+      .replace(/-+/g, '-') // remove hífens duplicados
+      .replace(/^-|-$/g, '') || // remove hífens nas pontas
+    'scalar-api'
+  )
+}
+
 async function copyMcpUrl() {
   await copyToClipboard(effectiveUrl.value)
   toast(
@@ -75,26 +88,22 @@ async function copyMcpUrl() {
 }
 
 async function copyOpenClaudeCommand() {
-  const serverName = effectiveName.value.toLowerCase().replace(/\s+/g, '-')
-  const command = `claude mcp add ${serverName} --scope user -- npx -y tsx /Users/matheus.diniz_1/Documents/GitHub/scalar/packages/mcp-server/src/index.ts`
+  const serverName = sanitizeServerName(effectiveName.value)
+  const command = `claude mcp add ${serverName} --scope user -- npx -y @scalar/mcp-server`
   await copyToClipboard(command)
   toast('Comando OpenClaude copiado para a área de transferência!', 'info')
 }
 
 async function copyAntigravityConfig() {
-  const serverName = effectiveName.value.toLowerCase().replace(/\s+/g, '-')
+  const serverName = sanitizeServerName(effectiveName.value)
   const config = {
     mcpServers: {
       [serverName]: {
         command: 'npx',
-        args: [
-          '-y',
-          'tsx',
-          '/Users/matheus.diniz_1/Documents/GitHub/scalar/packages/mcp-server/src/index.ts',
-        ],
+        args: ['-y', '@scalar/mcp-server'],
         env: {
           INTERNAL_API_URL: effectiveUrl.value.replace(/\/mcp$/, ''),
-          INTERNAL_API_TOKEN: 'local-dev-token',
+          INTERNAL_API_TOKEN: 'YOUR_API_TOKEN',
         },
       },
     },
@@ -107,13 +116,13 @@ async function copyAntigravityConfig() {
 }
 
 function installInVsCode() {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && vscodeLink.value.startsWith('vscode:')) {
     window.location.href = vscodeLink.value
   }
 }
 
 function installInCursor() {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && cursorLink.value.startsWith('cursor:')) {
     window.location.href = cursorLink.value
   }
 }
