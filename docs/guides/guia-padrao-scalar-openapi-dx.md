@@ -28,6 +28,10 @@ Data       | Autor          | Descrição da Alteração
 2026-08-24 | Matheus Diniz  | Atualização v2.5.0: Servidor MCP Autônomo e Modular
            | (OpenClaude)   | (@scalar/mcp-server) com descoberta OpenAPI dinâmica,
            |                | diagnósticos de infraestrutura, Zero-Trust e recursos nativos.
+2026-08-24 | Matheus Diniz  | Atualização v2.6.0: Recursos Avançados de UI no Chat e MCP:
+           | (OpenClaude)   | Integração direta OpenClaude & Antigravity no botão MCP,
+           |                | injeção de contexto de endpoint no "Ask AI Agent" e
+           |                | menções inteligentes de endpoints com `@` e `/` no chat.
 =================================================================================
 -->
 
@@ -362,10 +366,37 @@ O agente de IA pode inspecionar recursos sem executar ferramentas ativas:
 
 #### 🖱️ 5. Integração com a UI do Scalar
 
-Na documentação do Scalar, o botão MCP foi desacoplado dos servidores de registro da nuvem:
+Na interface visual do Scalar, o botão MCP (na barra lateral superior) foi totalmente integrado aos agentes locais de desenvolvimento e desacoplado de redirecionamentos externos:
+
 - **VS Code**: Instalação direta via deep link `vscode:mcp/install`.
 - **Cursor**: Instalação direta via deep link `cursor://anysphere.cursor-deeplink/mcp/install`.
+- **Antigravity (MCP)**: Copia a configuração JSON completa formatada para o `~/.antigravity/mcp.json` ou arquivo local com um clique e toast de feedback.
+- **OpenClaude (CLI)**: Copia o comando `claude mcp add` pronto para o terminal do desenvolvedor.
 - **Copiar URL**: Copia a URL do endpoint local (`/mcp` ou `http://localhost:5052/mcp`) com toast de confirmação.
+
+---
+
+#### 🎯 6. Contexto Automático de Endpoint no "Ask AI Agent"
+
+Ao navegar pela documentação e clicar no botão **"Ask AI Agent"** (no cabeçalho superior direito do card de qualquer endpoint):
+
+1. **Injeção de Metadados**: O Scalar injeta automaticamente o contexto da rota ativa no formato `[Endpoint: {METODO} {/path} ({Summary})]`.
+2. **Pergunta Rápida**: Se o desenvolvedor clicar no botão sem digitar nada, o chat abre automaticamente solicitando uma explicação completa do funcionamento, parâmetros, payload esperado e códigos de retorno daquela rota.
+3. **Pergunta Customizada**: Se o desenvolvedor digitar uma pergunta específica no campo da rota (ex: *"como autenticar?"*), ela é enviada junto com o cabeçalho contextual do endpoint.
+
+---
+
+#### 🏷️ 7. Menções e Autocomplete de Endpoints no Chat com `@` e `/`
+
+Para referenciar rotas específicas dentro de qualquer conversa aberta no chat:
+
+1. **Gatilho de Autocomplete**: Ao digitar `@` ou `/` na caixa de entrada do prompt, um menu suspenso inteligente é exibido acima do campo.
+2. **Badges Coloridos de Métodos**: Os endpoints são listados com badges com as cores padrão da OpenAPI (`GET` em azul, `POST` em verde, `PUT`/`PATCH` em amarelo, `DELETE` em vermelho).
+3. **Filtro em Tempo Real**: Digitar após o `@` ou `/` (ex: `@/users` ou `/auth`) filtra dinamicamente os endpoints por caminho ou sumário.
+4. **Navegação pelo Teclado**:
+   - `↑` e `↓`: Navegam pela lista suspensa.
+   - `Enter`: Seleciona o endpoint e o insere no prompt no formato `[Endpoint: METODO /caminho]`.
+   - `Esc`: Fecha a lista de menção.
 
 ---
 
@@ -606,11 +637,13 @@ get_scalar_api_reference(
 
 ---
 
-## 🌐 5. Deploy e Ambientes
+## 🌐 5. Deploy, Integração e Ambientes
 
 ### A. Não Há Deploy Separado (O Padrão)
 
 Como a doc é uma rota da sua app FastAPI, ela sobe no mesmo deploy da API. Seu pipeline atual já publica a doc. Não existe passo de "publicar docs" à parte, nem workflow dedicado — essa é a vantagem central do auto-hospedado por integração.
+
+**Barra de Ferramentas Interna:** O botão *Integrate* na toolbar do developer tools oferece snippets prontos para Express, Fastify, NestJS, Hono, FastAPI e HTML/CDN — tudo 100% client-side, sem envio de dados a serviços externos. O botão *Share* permite exportar o spec em JSON/YAML ou gerar um link de prévia comprimido na URL (`#spec=...`), também sem servidor externo.
 
 - Fixe a versão do renderer via `scalar_js_url` apontando para uma versão específica da CDN, evitando quebra por atualização automática.
 - Para ambiente offline/air-gapped, hospede o bundle do `@scalar/api-reference` na sua própria CDN e aponte `scalar_js_url` para lá.
@@ -646,7 +679,7 @@ O Agent adiciona um chat de IA sobre sua API. Vem ligado só em `localhost` (men
 
 *Observação de privacidade:* quando o Agent é usado, seu documento OpenAPI é enviado ao Scalar na primeira mensagem. Para um setup 100% auto-contido — coerente com o Guia de Segurança e a sandbox `ai-jail` — mantenha desativado.
 
-### D. Deploy e Sincronia sem Plano Pago (Portal Estático Opcional)
+### D. Integração e Sincronia sem Plano Pago (Portal Estático Opcional)
 
 Se você quiser publicar a doc como HTML estático fora da app (portal público separado), reproduza o "deploy no merge" sem pagar plano com um workflow de GitHub Actions. O FastAPI continua a fonte de verdade: você exporta o `openapi.json` no build e publica junto com o HTML do Scalar.
 
