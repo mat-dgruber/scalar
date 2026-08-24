@@ -12,3 +12,9 @@ export { loadAuthFromStorage, loadClientFromStorage } from './load-from-perssist
 export { mapConfigPlugins } from './map-config-plugins'
 export { mapConfigToWorkspaceStore } from './map-config-to-workspace-store'
 export { type NormalizedConfiguration, normalizeConfigurations } from './normalize-configurations'
+export {
+  compressSpec,
+  decompressSpec,
+  generateSpecHashUrl,
+  getSpecFromUrlHash,
+} from './spec-compression'
