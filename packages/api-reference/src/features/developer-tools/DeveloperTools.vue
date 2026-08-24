@@ -10,7 +10,7 @@ import { computed } from 'vue'
 import { useLocalization } from '@/features/localization'
 
 import ApiReferenceToolbarTitle from './components/ApiReferenceToolbarTitle.vue'
-import DeployApiReference from './components/DeployApiReference.vue'
+import IntegrateApiReference from './components/IntegrateApiReference.vue'
 import ModifyConfiguration from './components/ModifyConfiguration.vue'
 import ShareApiReference from './components/ShareApiReference.vue'
 
@@ -62,7 +62,7 @@ const showDeveloperTools = computed<boolean>(() => {
         <ShareApiReference
           :externalUrls
           :workspace />
-        <DeployApiReference
+        <IntegrateApiReference
           :externalUrls
           :workspace />
       </template>

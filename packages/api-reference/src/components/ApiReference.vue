@@ -130,6 +130,7 @@ import {
   type NormalizedConfiguration,
 } from '@/helpers/normalize-configurations'
 import { safeDeepClone } from '@/helpers/safe-deep-clone'
+import { getSpecFromUrlHash } from '@/helpers/spec-compression'
 import { AGENT_CONTEXT_SYMBOL, useAgent } from '@/hooks/use-agent'
 import { useIntersection } from '@/hooks/use-intersection'
 import { createPluginManager, PLUGIN_MANAGER_SYMBOL } from '@/plugins'
@@ -182,6 +183,18 @@ onMounted(() => {
   obtrusiveScrollbars.value = hasObtrusiveScrollbars()
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', handleThemeStorage)
+
+    // Load spec from URL hash if present (#spec=...)
+    void getSpecFromUrlHash(window.location.hash).then((specJson) => {
+      if (specJson && typeof specJson === 'string') {
+        try {
+          const doc = JSON.parse(specJson)
+          addDocument({ name: '__hash__', document: doc }, mergedConfig.value)
+        } catch {
+          // ignore malformed JSON in URL hash
+        }
+      }
+    })
   }
 })
 
