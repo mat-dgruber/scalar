@@ -1,10 +1,18 @@
 /**
  * Compresses an OpenAPI JSON string using Gzip and encodes to URL-safe Base64.
+ *
+ * Uses TextEncoder → ReadableStream → CompressionStream to stay compatible
+ * with both browser and Node.js (Vitest) environments.
  */
 export async function compressSpec(jsonString: string): Promise<string> {
-  const stream = new Blob([jsonString]).stream().pipeThrough(new CompressionStream('gzip'))
-  const response = new Response(stream)
-  const buffer = await response.arrayBuffer()
+  const encoded = new TextEncoder().encode(jsonString)
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoded)
+      controller.close()
+    },
+  }).pipeThrough(new CompressionStream('gzip') as unknown as TransformStream<Uint8Array, Uint8Array>)
+  const buffer = await new Response(stream).arrayBuffer()
   const bytes = new Uint8Array(buffer)
 
   let binary = ''
@@ -30,9 +38,13 @@ export async function decompressSpec(base64Url: string): Promise<string> {
     bytes[i] = binary.charCodeAt(i)
   }
 
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))
-  const response = new Response(stream)
-  return await response.text()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(bytes)
+      controller.close()
+    },
+  }).pipeThrough(new DecompressionStream('gzip') as unknown as TransformStream<Uint8Array, Uint8Array>)
+  return await new Response(stream).text()
 }
 
 /**
