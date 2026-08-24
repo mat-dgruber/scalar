@@ -1,114 +1,132 @@
 <script setup lang="ts">
-import { useLoadingState } from '@scalar/components/loading'
-import { isValidUrl } from '@scalar/helpers/url/is-valid-url'
-import { ScalarIconArrowUpRight } from '@scalar/icons'
+import {
+  ScalarIconArrowUpRight,
+  ScalarIconSparkle,
+  ScalarIconTerminal,
+} from '@scalar/icons'
 import type { ExternalUrls } from '@scalar/types/api-reference'
 import { useClipboard } from '@scalar/use-hooks/useClipboard'
 import { useToasts } from '@scalar/use-toasts'
 import type { WorkspaceStore } from '@scalar/workspace-store/client'
-import { nextTick } from 'vue'
+import { computed } from 'vue'
 
 import { useLocalization } from '@/features/localization'
-import { uploadTempDocument } from '@/helpers/upload-temp-document'
 
 const props = defineProps<{
   config?: {
     name?: string
     url?: string
   }
-  externalUrls: ExternalUrls
+  externalUrls?: ExternalUrls
   url?: string
   workspace: WorkspaceStore
 }>()
 
 const { copyToClipboard } = useClipboard()
 const { translate } = useLocalization()
-
 const { toast } = useToasts()
 
-const loader = useLoadingState()
+const hasCustomConfig = computed(() =>
+  Boolean(props.config?.name || props.config?.url),
+)
 
-const hasConfig = props.config?.name || props.config?.url
+const effectiveName = computed(() => {
+  return (
+    props.config?.name ||
+    props.workspace?.workspace?.activeDocument?.info?.title ||
+    'Scalar API'
+  )
+})
 
-const encoded = btoa(JSON.stringify(props.config ?? {}))
-
-const name = encodeURIComponent(props.config?.name ?? '')
-const cursorLink = `cursor://anysphere.cursor-deeplink/mcp/install?name=${name}&config=${encoded}`
-const vscodeLink = `vscode:mcp/install?${encodeURIComponent(JSON.stringify(props.config ?? {}))}`
-
-const docUrl = defineModel<string>('url')
-
-/** Generate and open the registration link */
-async function generateRegisterLink() {
-  if (loader.isLoading || !props.workspace) {
-    return
+const effectiveUrl = computed(() => {
+  if (props.config?.url) {
+    return props.config.url
   }
-
-  // If we have already have a document URL that is valid
-  if (docUrl.value && isValidUrl(docUrl.value)) {
-    openRegisterLink(docUrl.value)
-    return
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/mcp`
   }
+  return 'http://localhost:5052/mcp'
+})
 
-  loader.start()
+const effectiveConfig = computed(() => ({
+  name: effectiveName.value,
+  url: effectiveUrl.value,
+}))
 
-  const document = props.workspace.exportActiveDocument('json')
+const encodedConfig = computed(() =>
+  btoa(JSON.stringify(effectiveConfig.value)),
+)
 
-  if (!document) {
-    toast(translate('developerTools.unableToExportDocument'), 'error')
-    await loader.invalidate()
-    return
+const cursorLink = computed(() => {
+  const name = encodeURIComponent(effectiveName.value)
+  return `cursor://anysphere.cursor-deeplink/mcp/install?name=${name}&config=${encodedConfig.value}`
+})
+
+const vscodeLink = computed(() => {
+  return `vscode:mcp/install?${encodeURIComponent(JSON.stringify(effectiveConfig.value))}`
+})
+
+async function copyMcpUrl() {
+  await copyToClipboard(effectiveUrl.value)
+  toast(
+    translate('mcp.copied') || `MCP URL copiada: ${effectiveUrl.value}`,
+    'info',
+  )
+}
+
+async function copyOpenClaudeCommand() {
+  const serverName = effectiveName.value.toLowerCase().replace(/\s+/g, '-')
+  const command = `claude mcp add ${serverName} --scope user -- npx -y tsx /Users/matheus.diniz_1/Documents/GitHub/scalar/packages/mcp-server/src/index.ts`
+  await copyToClipboard(command)
+  toast('Comando OpenClaude copiado para a área de transferência!', 'info')
+}
+
+async function copyAntigravityConfig() {
+  const serverName = effectiveName.value.toLowerCase().replace(/\s+/g, '-')
+  const config = {
+    mcpServers: {
+      [serverName]: {
+        command: 'npx',
+        args: [
+          '-y',
+          'tsx',
+          '/Users/matheus.diniz_1/Documents/GitHub/scalar/packages/mcp-server/src/index.ts',
+        ],
+        env: {
+          INTERNAL_API_URL: effectiveUrl.value.replace(/\/mcp$/, ''),
+          INTERNAL_API_TOKEN: 'local-dev-token',
+        },
+      },
+    },
   }
+  await copyToClipboard(JSON.stringify(config, null, 2))
+  toast(
+    'Configuração Antigravity copiada para a área de transferência!',
+    'info',
+  )
+}
 
-  try {
-    docUrl.value = await uploadTempDocument(document, props.externalUrls)
-    await loader.validate()
-    openRegisterLink(docUrl.value)
-
-    await nextTick()
-
-    await loader.clear()
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : translate('developerTools.unknownError')
-    toast(message, 'error')
-    await loader.invalidate()
+function installInVsCode() {
+  if (typeof window !== 'undefined') {
+    window.location.href = vscodeLink.value
   }
 }
 
-/** Open the registration link in a new tab */
-function openRegisterLink(documentUrl: string) {
-  const url = new URL(`${props.externalUrls.dashboardUrl}/register`)
-  url.searchParams.set('url', documentUrl)
-  url.searchParams.set('createMcp', 'true')
-
-  window.open(url.toString(), '_blank')
+function installInCursor() {
+  if (typeof window !== 'undefined') {
+    window.location.href = cursorLink.value
+  }
 }
 </script>
 
 <template>
   <div class="scalar-mcp-layer">
-    <!--
-      When there is no MCP config yet these act as buttons that generate one.
-      Using <a href=""> (or undefined href) fails axe link-name; keep a real
-      link only when we already have a target URL.
-    -->
-    <component
-      :is="hasConfig ? 'a' : 'button'"
+    <!-- 1. VS Code -->
+    <a
+      v-if="hasCustomConfig"
       class="scalar-mcp-layer-link"
-      :href="hasConfig ? vscodeLink : undefined"
-      :target="hasConfig ? '_blank' : undefined"
-      :type="hasConfig ? undefined : 'button'"
-      @click="
-        (e: MouseEvent) => {
-          if (!hasConfig) {
-            e.preventDefault()
-            generateRegisterLink()
-          }
-        }
-      ">
+      :href="vscodeLink"
+      target="_blank">
       <svg
         class="mcp-logo"
         fill="currentColor"
@@ -121,21 +139,32 @@ function openRegisterLink(documentUrl: string) {
       </svg>
       VS Code
       <ScalarIconArrowUpRight class="mcp-nav ml-auto size-4" />
-    </component>
-    <component
-      :is="hasConfig ? 'a' : 'button'"
+    </a>
+    <button
+      v-else
       class="scalar-mcp-layer-link"
-      :href="hasConfig ? cursorLink : undefined"
-      :target="hasConfig ? '_blank' : undefined"
-      :type="hasConfig ? undefined : 'button'"
-      @click="
-        (e: MouseEvent) => {
-          if (!hasConfig) {
-            e.preventDefault()
-            generateRegisterLink()
-          }
-        }
-      ">
+      type="button"
+      @click="installInVsCode">
+      <svg
+        class="mcp-logo"
+        fill="currentColor"
+        height="800"
+        viewBox="0 0 32 32"
+        width="800"
+        xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M30.865 3.448 24.282.281a1.99 1.99 0 0 0-2.276.385L9.397 12.171 3.902 8.004a1.33 1.33 0 0 0-1.703.073L.439 9.681a1.33 1.33 0 0 0-.005 1.969L5.2 15.999.434 20.348a1.33 1.33 0 0 0 .005 1.969l1.76 1.604a1.33 1.33 0 0 0 1.703.073l5.495-4.172 12.615 11.51a1.98 1.98 0 0 0 2.271.385l6.589-3.172a1.99 1.99 0 0 0 1.13-1.802V5.248c0-.766-.443-1.469-1.135-1.802zm-6.86 19.818L14.432 16l9.573-7.266z" />
+      </svg>
+      VS Code
+      <ScalarIconArrowUpRight class="mcp-nav ml-auto size-4" />
+    </button>
+
+    <!-- 2. Cursor -->
+    <a
+      v-if="hasCustomConfig"
+      class="scalar-mcp-layer-link"
+      :href="cursorLink"
+      target="_blank">
       <svg
         class="mcp-logo"
         viewBox="0 0 466.73 532.09"
@@ -146,12 +175,49 @@ function openRegisterLink(documentUrl: string) {
       </svg>
       Cursor
       <ScalarIconArrowUpRight class="mcp-nav ml-auto size-4" />
-    </component>
-    <!-- localhost + you don't have a MCP added -->
-    <div
-      v-if="!hasConfig"
+    </a>
+    <button
+      v-else
       class="scalar-mcp-layer-link"
-      @click="generateRegisterLink">
+      type="button"
+      @click="installInCursor">
+      <svg
+        class="mcp-logo"
+        viewBox="0 0 466.73 532.09"
+        xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M457.43 125.94 244.42 2.96a22.13 22.13 0 0 0-22.12 0L9.3 125.94C3.55 129.26 0 135.4 0 142.05v247.99c0 6.65 3.55 12.79 9.3 16.11l213.01 122.98a22.13 22.13 0 0 0 22.12 0l213.01-122.98c5.75-3.32 9.3-9.46 9.3-16.11V142.05c0-6.65-3.55-12.79-9.3-16.11zm-13.38 26.05L238.42 508.15c-1.39 2.4-5.06 1.42-5.06-1.36V273.58c0-4.66-2.49-8.97-6.53-11.31L24.87 145.67c-2.4-1.39-1.42-5.06 1.36-5.06h411.26c5.84 0 9.49 6.33 6.57 11.39h-.01Z"
+          style="fill: currentColor" />
+      </svg>
+      Cursor
+      <ScalarIconArrowUpRight class="mcp-nav ml-auto size-4" />
+    </button>
+
+    <!-- 3. Antigravity -->
+    <button
+      class="scalar-mcp-layer-link"
+      type="button"
+      @click="copyAntigravityConfig">
+      <ScalarIconSparkle class="mcp-logo" />
+      Antigravity (MCP)
+      <ScalarIconArrowUpRight class="mcp-nav ml-auto size-4" />
+    </button>
+
+    <!-- 4. OpenClaude -->
+    <button
+      class="scalar-mcp-layer-link"
+      type="button"
+      @click="copyOpenClaudeCommand">
+      <ScalarIconTerminal class="mcp-logo" />
+      OpenClaude (CLI)
+      <ScalarIconArrowUpRight class="mcp-nav ml-auto size-4" />
+    </button>
+
+    <!-- 5. Connect / Generate MCP (Copy URL) -->
+    <div
+      v-if="!hasCustomConfig"
+      class="scalar-mcp-layer-link"
+      @click="copyMcpUrl">
       <svg
         class="mcp-logo"
         fill="none"
@@ -178,11 +244,10 @@ function openRegisterLink(documentUrl: string) {
       {{ translate('mcp.generate') }}
       <ScalarIconArrowUpRight class="mcp-nav ml-auto size-4" />
     </div>
-    <!-- you do have an MCP added -->
     <div
       v-else
       class="scalar-mcp-layer-link"
-      @click="copyToClipboard(config?.url ?? '')">
+      @click="copyMcpUrl">
       {{ translate('mcp.connect') }}
       <svg
         class="mcp-logo ml-auto"
@@ -213,11 +278,8 @@ function openRegisterLink(documentUrl: string) {
 
 <style scoped>
 .scalar-mcp-layer {
-  /* Rows are absolutely positioned, so the container cannot auto-size to them.
-     Derive the hover height from these instead of hardcoding a magic number.
-     Bump --mcp-row-count when a row is added or removed. */
   --mcp-row-height: 31px;
-  --mcp-row-count: 3;
+  --mcp-row-count: 5;
   gap: 2px;
   display: flex;
   flex-direction: column;
@@ -228,7 +290,6 @@ function openRegisterLink(documentUrl: string) {
   height: 32px;
 }
 .scalar-mcp-layer:hover {
-  /* N rows plus the 2px fan-out offset between each */
   height: calc(
     var(--mcp-row-count) * var(--mcp-row-height) + (var(--mcp-row-count) - 1) *
       2px
@@ -238,7 +299,6 @@ function openRegisterLink(documentUrl: string) {
   cursor: pointer !important;
 }
 .scalar-mcp-layer .scalar-mcp-layer-link {
-  /* Must stay above font-size and line-height, which the shorthand resets */
   font: inherit;
   cursor: pointer;
   width: 100%;
@@ -261,7 +321,6 @@ function openRegisterLink(documentUrl: string) {
   position: absolute;
   bottom: 0;
 }
-/* increase click area for gap */
 .scalar-mcp-layer-link:after {
   content: '';
   position: absolute;

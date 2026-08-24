@@ -260,7 +260,10 @@ provide(REQUEST_BODY_COMPOSITION_INDEX_SYMBOL, requestBodyCompositionSelection)
                 v-if="!isWebhook"
                 #footer="{ exampleName }">
                 <div class="flex">
-                  <AskAgentButton />
+                  <AskAgentButton
+                    :method="method"
+                    :operation="operation"
+                    :path="path" />
                   <TestRequestButton
                     v-if="!options.hideTestRequestButton"
                     :id
