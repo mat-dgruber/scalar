@@ -580,6 +580,19 @@ export type ApiReferenceTranslations = {
     mcpServers: string
     unableToExportDocument: string
     unknownError: string
+    downloaded: string
+    copy: string
+    specCopied: string
+    linkGenerated: string
+    localExport: string
+    previewLink: string
+    generatePreviewLink: string
+    previewLinkHint: string
+    integrate: string
+    integrateTitle: string
+    integrateDescription: string
+    frameworkSnippets: string
+    internalGuides: string
   }
   gettingStarted: {
     swaggerEditor: string

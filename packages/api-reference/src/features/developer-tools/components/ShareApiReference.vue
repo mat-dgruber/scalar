@@ -1,30 +1,26 @@
 <script lang="ts" setup>
 import { ScalarFormSection } from '@scalar/components/form'
-import type { ExternalUrls } from '@scalar/types/api-reference'
 import type { WorkspaceStore } from '@scalar/workspace-store/client'
 
 import { useLocalization } from '@/features/localization'
 
 import ApiReferenceToolbarPopover from './ApiReferenceToolbarPopover.vue'
-import ApiReferenceToolbarShareTemporary from './ApiReferenceToolbarShareTemporary.vue'
+import ApiReferenceToolbarShareLocal from './ApiReferenceToolbarShareLocal.vue'
 
-const { workspace, externalUrls } = defineProps<{
-  workspace: WorkspaceStore
-  externalUrls: ExternalUrls
+const { workspace } = defineProps<{
+  workspace?: WorkspaceStore
 }>()
 const { translate } = useLocalization()
 </script>
 <template>
-  <ApiReferenceToolbarPopover class="w-120">
+  <ApiReferenceToolbarPopover class="w-96">
     <template #label>{{ translate('developerTools.share') }}</template>
     <ScalarFormSection>
       <template #label>{{ translate('developerTools.shareTitle') }}</template>
-      <p class="text-c-2 mb-2 leading-normal">
+      <p class="text-c-2 mb-3 text-sm leading-normal">
         {{ translate('developerTools.shareDescription') }}
       </p>
-      <ApiReferenceToolbarShareTemporary
-        :externalUrls
-        :workspace />
+      <ApiReferenceToolbarShareLocal :workspace="workspace" />
     </ScalarFormSection>
   </ApiReferenceToolbarPopover>
 </template>
