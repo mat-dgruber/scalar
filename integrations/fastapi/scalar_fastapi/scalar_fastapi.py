@@ -689,6 +689,13 @@ def get_scalar_api_reference(
     if show_developer_tools != "localhost":  # Default is 'localhost'
         config["showDeveloperTools"] = show_developer_tools
 
+    if agent is not None:
+        config["agent"] = (
+            agent.model_dump(exclude_none=True)
+            if hasattr(agent, "model_dump")
+            else agent
+        )
+
     if not telemetry:  # Default is True
         config["telemetry"] = telemetry
 

@@ -24,11 +24,17 @@ const overrides = defineModel<Partial<ApiReferenceConfiguration>>('overrides')
 const { translate } = useLocalization()
 
 const showDeveloperTools = computed<boolean>(() => {
-  if (configuration?.showDeveloperTools === 'always') {
+  if (
+    configuration?.showDeveloperTools === 'always' ||
+    (configuration?.showDeveloperTools as unknown) === true
+  ) {
     return true
   }
 
-  if (configuration?.showDeveloperTools === 'never') {
+  if (
+    configuration?.showDeveloperTools === 'never' ||
+    (configuration?.showDeveloperTools as unknown) === false
+  ) {
     return false
   }
 

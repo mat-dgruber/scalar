@@ -1332,11 +1332,8 @@ const agent = useAgent({
       return false
     }
 
-    if (typeof window !== 'undefined' && isLocalUrl(window.location.href)) {
-      return true
-    }
-
-    return Boolean(configList.value[activeSlug.value]?.agent?.key)
+    // In this fork, Agent Scalar with BYOK Gemini is enabled by default unless explicitly disabled
+    return true
   }),
 })
 provide(AGENT_CONTEXT_SYMBOL, agent)

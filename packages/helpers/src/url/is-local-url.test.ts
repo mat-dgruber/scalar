@@ -53,9 +53,16 @@ describe('isLocalUrl ', () => {
     expect(isLocalUrl('https://google.com')).toBe(false)
   })
 
-  it('returns false for IP addresses that are not in the local list', () => {
-    expect(isLocalUrl('http://192.168.1.1')).toBe(false)
-    expect(isLocalUrl('https://10.0.0.1')).toBe(false)
+  it('returns true for private/intranet IP addresses (RFC 1918)', () => {
+    expect(isLocalUrl('http://192.168.1.1')).toBe(true)
+    expect(isLocalUrl('https://10.0.0.1')).toBe(true)
+    expect(isLocalUrl('http://10.93.15.216:8001')).toBe(true)
+    expect(isLocalUrl('http://172.16.0.1:3000')).toBe(true)
+  })
+
+  it('returns false for public non-local IP addresses', () => {
+    expect(isLocalUrl('http://8.8.8.8')).toBe(false)
+    expect(isLocalUrl('https://1.1.1.1')).toBe(false)
   })
 
   it('handles URLs with ports', () => {

@@ -22,6 +22,9 @@ Data       | Autor          | Descrição da Alteração
 2026-08-21 | Matheus Diniz  | Atualização v2.3.0: Adicionado guia de uso do Servidor
            | (Antigravity)  | MCP (Model Context Protocol) nativo para integração de
            |                | agentes de IA (Cursor, Claude Desktop, Gemini CLI).
+2026-08-24 | Matheus Diniz  | Atualização v2.4.0: Estratégias de distribuição do fork
+           | (OpenClaude)   | standalone (Auto-hospedagem estática FastAPI vs GitHub
+           |                | Releases) e troubleshooting do erro `Scalar is not defined`.
 =================================================================================
 -->
 
@@ -175,55 +178,81 @@ No Angular (Standalone Components ou Tradicional), o Scalar deve ser montado no 
 
 ### C. Inicialização em Projetos FastAPI / Python (Auto-Hospedado)
 
-Você pode servir a documentação diretamente via FastAPI apontando para o bundle standalone do nosso fork (hospedado automaticamente nos Releases do GitHub):
+Para projetos FastAPI utilizando o pacote oficial `scalar-fastapi` integrado ao nosso fork com suporte ao Google Gemini e novos temas, temos duas estratégias principais de distribuição do script:
+
+#### Opção 1: Auto-Hospedagem Estática Local (100% Offline / VPN Safe / Recomendada por Projeto)
+
+Ideal para repositórios individuais (como `integracaoPDV`), garantindo disponibilidade total sem depender de rede externa ou GitHub.
+
+1. **Compilar e copiar o bundle do fork:**
+   ```bash
+   # No repositório scalar:
+   pnpm --filter @scalar/api-reference build:standalone
+   # Copiar dist/browser/standalone.js para app/static/scalar/standalone.js do seu projeto FastAPI
+   ```
+
+2. **Configurar no `main.py`:**
+   ```python
+   from pathlib import Path
+   from fastapi import FastAPI
+   from fastapi.staticfiles import StaticFiles
+   from scalar_fastapi import Layout, Theme, get_scalar_api_reference
+
+   app = FastAPI(title="Minha API", openapi_url="/openapi.json")
+
+   # 1. Montar arquivos estáticos locais
+   STATIC_DIR = Path(__file__).resolve().parent / "static"
+   if STATIC_DIR.exists():
+       app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+   # 2. Servir rota /scalar apontando para o bundle local
+   @app.get("/scalar", include_in_schema=False)
+   def scalar_docs():
+       return get_scalar_api_reference(
+           openapi_url=app.openapi_url,
+           title=f"{app.title} - Documentação Interativa",
+           layout=Layout.MODERN,
+           theme=Theme.KEPLER,
+           show_sidebar=True,
+           persist_auth=True,
+           scalar_js_url="/static/scalar/standalone.js",
+       )
+   ```
+
+---
+
+#### Opção 2: Distribuição Centralizada via GitHub Releases (Ideal para Múltiplas APIs)
+
+Para consumir o bundle compilado do fork diretamente pela web sem clonar ou compilar o JavaScript em cada projeto backend:
 
 ```python
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from scalar_fastapi import Layout, Theme, get_scalar_api_reference
 
-app = FastAPI(
-    title="meuCPB API",
-    version="1.0.0",
-    description="Backend for Frontend (BFF) unificado.",
-    openapi_url="/openapi.json",
-)
+app = FastAPI(title="Minha API", openapi_url="/openapi.json")
 
 
 @app.get("/scalar", include_in_schema=False)
-async def scalar_html():
-    html_content = """
-    <!doctype html>
-    <html>
-      <head>
-        <title>Documentação da API</title>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </head>
-      <body>
-        <div id="app"></div>
-
-        <!-- Bundle Standalone compilado do nosso fork com suporte ao Google Gemini -->
-        <script src="https://github.com/mat-dgruber/scalar/releases/latest/download/standalone.js"></script>
-        <script>
-          Scalar.createApiReference('#app', {
-            url: '/openapi.json',
-            agent: {
-              provider: 'gemini',
-              gemini: {
-                model: 'gemini-3.7-flash'
-              }
-            }
-          })
-        </script>
-      </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+def scalar_docs():
+    return get_scalar_api_reference(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} - Documentação Interativa",
+        layout=Layout.MODERN,
+        theme=Theme.KEPLER,
+        show_sidebar=True,
+        persist_auth=True,
+        # Carrega o bundle mais recente diretamente das Releases públicas do GitHub:
+        scalar_js_url="https://github.com/mat-dgruber/scalar/releases/latest/download/standalone.js",
+    )
 ```
 
-> [!TIP]
-> **Como funciona a URL `https://github.com/mat-dgruber/scalar/releases/latest/download/standalone.js`:**
-> A cada execução do workflow de publicação no repositório `mat-dgruber/scalar`, o GitHub Actions compila o bundle e atualiza a release `latest`. Qualquer backend FastAPI consumindo essa URL recebe as novidades e melhorias do chat de IA automaticamente sem necessidade de rebuild no Python.
+> [!WARNING]
+> **Troubleshooting: Por que `jsDelivr` retornava 404 e gerava `Scalar is not defined`?**
+> - CDNs públicas como `cdn.jsdelivr.net` e `unpkg.com` indexam exclusivamente o registro público do npm (`registry.npmjs.org`).
+> - Como o escopo `@mat-dgruber/*` é hospedado no **GitHub Packages** (`npm.pkg.github.com`), o jsDelivr não consegue acessá-lo publicamente, retornando `404 Not Found`.
+> - Quando o script falha com 404, o objeto global `window.Scalar` não é registrado, e o script inline falha imediatamente com `Uncaught ReferenceError: Scalar is not defined`.
+> - **Solução:** Utilize a **Opção 1 (bundle estático local)** ou a **Opção 2 (GitHub Releases)**.
 
 ---
 
