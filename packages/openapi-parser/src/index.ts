@@ -13,6 +13,7 @@ export {
 
 export type { AnyObject, ErrorObject, Filesystem, LoadResult, UnknownObject } from './types'
 export { type DereferenceOptions, dereference } from './utils/dereference'
+export { dereferenceAsync } from './utils/dereference-async'
 export { filter } from './utils/filter'
 export { isJson } from './utils/is-json'
 export { isYaml } from './utils/is-yaml'

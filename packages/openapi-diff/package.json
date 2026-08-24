@@ -1,0 +1,54 @@
+{
+  "name": "@scalar/openapi-diff",
+  "description": "Semantic diff and breaking change analyzer for OpenAPI documents",
+  "license": "MIT",
+  "author": "Scalar (https://github.com/scalar)",
+  "homepage": "https://github.com/scalar/scalar",
+  "bugs": "https://github.com/scalar/scalar/issues/new/choose",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scalar/scalar.git",
+    "directory": "packages/openapi-diff"
+  },
+  "keywords": [
+    "openapi",
+    "swagger",
+    "diff",
+    "breaking-changes",
+    "semver",
+    "scalar"
+  ],
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "test": "vitest --run",
+    "types:check": "tsgo --noEmit"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "dependencies": {
+    "@scalar/openapi-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:*",
+    "tsc-alias": "^1.8.10",
+    "typescript": "^5.8.3",
+    "vitest": "catalog:*"
+  }
+}

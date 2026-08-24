@@ -82,6 +82,36 @@
 
   --scalar-sidebar-indent: 20px;
   --scalar-sidebar-padding: 12px;
+
+  /* DENSITY TOKENS -------------------------------- */
+  --scalar-density-gap: 16px;
+  --scalar-density-padding: 16px;
+  --scalar-density-section-space: 32px;
+  --scalar-density-font-scale: 1;
+}
+
+/* Compact Mode (High Information Density) */
+.scalar-density-compact,
+.scalar-compact {
+  --scalar-density-gap: 8px;
+  --scalar-density-padding: 8px;
+  --scalar-density-section-space: 16px;
+  --scalar-heading-1: 20px;
+  --scalar-heading-2: 17px;
+  --scalar-heading-3: 14px;
+  --scalar-paragraph: 14px;
+  --scalar-line-height-1: 26px;
+  --scalar-line-height-2: 20px;
+  --scalar-line-height-3: 17px;
+  --scalar-sidebar-padding: 6px;
+}
+
+/* Comfortable Mode (Default Spacing) */
+.scalar-density-comfortable,
+.scalar-comfortable {
+  --scalar-density-gap: 16px;
+  --scalar-density-padding: 16px;
+  --scalar-density-section-space: 32px;
 }
 
 .dark-mode {
