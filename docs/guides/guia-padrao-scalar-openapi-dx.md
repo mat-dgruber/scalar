@@ -25,6 +25,9 @@ Data       | Autor          | Descrição da Alteração
 2026-08-24 | Matheus Diniz  | Atualização v2.4.0: Estratégias de distribuição do fork
            | (OpenClaude)   | standalone (Auto-hospedagem estática FastAPI vs GitHub
            |                | Releases) e troubleshooting do erro `Scalar is not defined`.
+2026-08-24 | Matheus Diniz  | Atualização v2.5.0: Servidor MCP Autônomo e Modular
+           | (OpenClaude)   | (@scalar/mcp-server) com descoberta OpenAPI dinâmica,
+           |                | diagnósticos de infraestrutura, Zero-Trust e recursos nativos.
 =================================================================================
 -->
 
@@ -266,73 +269,103 @@ O Scalar integrado com Gemini possui um seletor visual e persistência automáti
 
 ---
 
-### E. Como Usar o Servidor MCP (Model Context Protocol) Nativo
+### E. Como Usar o Servidor MCP Autônomo e Modular (`@scalar/mcp-server`)
 
-O Scalar possui suporte nativo ao **Model Context Protocol (MCP)**, permitindo que ferramentas e assistentes de IA (como **Cursor**, **Claude Desktop**, **Gemini CLI** e **Antigravity**) se conectem à sua API e utilizem seus endpoints como ferramentas (*tools*) executáveis de forma automática.
+O nosso fork disponibiliza o pacote `@scalar/mcp-server`, um **Servidor MCP 100% autônomo, desacoplado e de execução local via Stdio**. Ele permite que assistentes de IA (**OpenClaude**, **Antigravity**, **Cursor** e **Claude Desktop**) descubram, testem e diagnostiquem APIs da sua infraestrutura sem depender de nenhum serviço de nuvem ou proxy externo da Scalar.
 
-#### 1. Endpoints do Servidor MCP:
-- **`POST /mcp`**: Endpoint JSON-RPC 2.0 padrão da indústria compatível com a especificação MCP (`initialize`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `ping`).
-- **`GET /mcp`**: Rota informativa e de descoberta com metadados do serviço.
+#### 💡 Por Que Usar o `@scalar/mcp-server`?
 
-#### 2. Como Iniciar o Mock Server com Suporte MCP:
+1. **Privacidade e Zero-Trust**: O servidor roda como subprocesso local da sua máquina. Cabeçalhos (`Authorization`, `X-Api-Key`, `Cookie`) e payloads sensíveis (`password`, `secret`, `token`) são mascarados automaticamente antes de chegar ao LLM.
+2. **Descoberta Dinâmica de OpenAPI**: Não precisa cadastrar endpoints manualmente. O MCP detecta arquivos `openapi.json`, `swagger.json` ou o servidor Scalar em execução e cria um catálogo dinâmico de ferramentas.
+3. **Diagnósticos Reais de Infraestrutura**: Mede latência real de rede em milissegundos (HTTP ping) e fornece relatórios de saúde dos microsserviços.
+4. **Multi-Ambiente Dinâmico**: Permite que o agente alterne entre `local`, `dev` e `staging` durante a sessão sem reiniciar o servidor.
+5. **Recursos Nativos (MCP Resources)**: Fornece `openapi://spec` e `infra://health-status` como documentos legíveis diretamente pelo protocolo MCP.
 
-Com a CLI do Scalar:
-```bash
-# Inicia o mock server e expõe o endpoint MCP na porta 5052
-npx @scalar/cli mock ./openapi.json --port 5052
-```
+---
 
-Ou no seu backend Node/TypeScript com `@scalar/mock-server`:
-```typescript
-import { createMockServer } from '@scalar/mock-server'
+#### ⚙️ 1. Configuração Global (Recomendada — 1 Vez por Máquina)
 
-const app = await createMockServer({
-  specification: './openapi.json',
-})
+Ao configurar globalmente, o servidor MCP fica disponível automaticamente em **qualquer pasta ou projeto** que você abrir no terminal:
 
-// O endpoint POST /mcp já estará disponível automaticamente!
-```
-
-#### 3. Como Conectar o MCP aos Assistentes de IA:
-
-##### 🤖 Cursor (Cursor MCP Settings):
-Adicione no seu arquivo `.cursor/mcp.json` ou nas configurações de MCP do Cursor:
+##### A. No OpenClaude (`~/.claude.json`):
+Adicione em `mcpServers` no seu arquivo `~/.claude.json`:
 ```json
 {
   "mcpServers": {
-    "minha-api-scalar": {
-      "url": "http://localhost:5052/mcp"
+    "meu-mcp-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/Users/matheus.diniz_1/Documents/GitHub/scalar/packages/mcp-server/src/index.ts"
+      ],
+      "env": {
+        "INTERNAL_API_URL": "http://localhost:5052",
+        "INTERNAL_API_TOKEN": "local-dev-token"
+      }
     }
   }
 }
 ```
 
-##### 🧠 Claude Desktop (`claude_desktop_config.json`):
+##### B. No Antigravity (`~/.antigravity/mcp.json`):
+Crie ou edite `~/.antigravity/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "minha-api-scalar": {
-      "url": "http://localhost:5052/mcp"
+    "meu-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/Users/matheus.diniz_1/Documents/GitHub/scalar/packages/mcp-server/src/index.ts"
+      ],
+      "env": {
+        "INTERNAL_API_URL": "http://localhost:5052",
+        "INTERNAL_API_TOKEN": "local-dev-token"
+      }
     }
   }
 }
 ```
 
-##### ⚡ Gemini CLI / Antigravity (`mcp_config.json`):
-```json
-{
-  "mcpServers": {
-    "minha-api-scalar": {
-      "url": "http://localhost:5052/mcp"
-    }
-  }
-}
-```
+---
 
-#### 4. O Que o Assistente de IA Consegue Fazer:
-1. **`tools/list`**: O assistente descobre automaticamente todos os endpoints da API (ex: `listUsers`, `createOrder`, `getPetById`) com seus parâmetros e esquemas tipados via JSON Schema.
-2. **`tools/call`**: O assistente pode executar chamadas de teste diretamente na API (recebendo dados mockados ou respostas do servidor com validação de payload).
-3. **`resources/read` (`openapi://specification`)**: O LLM pode ler a especificação OpenAPI completa da sua aplicação sob demanda para entender a arquitetura dos serviços.
+#### 📁 2. Configuração por Projeto (Opcional — Comitado no Git)
+
+Para que todos os desenvolvedores que clonarem o repositório tenham acesso imediato:
+
+- Crie `.mcp.json` (para OpenClaude / Cursor) e `.antigravity/mcp.json` (para Antigravity) na raiz do projeto com o comando relativo.
+
+---
+
+#### 🛠️ 3. Catálogo de Ferramentas (Tools) Disponíveis para o Agente
+
+| Ferramenta | Entrada (`inputSchema`) | Finalidade e Exemplo |
+| :--- | :--- | :--- |
+| `openapi_descobrir_rotas` | `{ query?: string, tag?: string, metodo?: string }` | **Busca semântica e estruturada de endpoints**.<br>Ex: Filtrar rotas com tag `Usuarios` ou método `POST`. |
+| `openapi_executar_requisicao` | `{ endpoint: string, metodo: string, params?: object, payload?: object, headers?: object, ambiente?: string }` | **Dispara chamadas REST autenticadas** contra a API ativa com injeção automática de token e sanitização de segurança. |
+| `infra_diagnosticar_servico` | `{ url?: string, timeoutMs?: number }` | **Mede conectividade e latência em ms**.<br>Retorna status `UP`/`DOWN`, tempo de resposta e diagnóstico de erro se o serviço cair. |
+| `ambiente_gerenciar` | `{ acao: 'listar' \| 'obter' \| 'trocar', ambiente?: 'local' \| 'dev' \| 'staging' }` | **Gerencia ambientes de execução**.<br>Permite ao agente alternar o target entre ambiente local e servidores de homologação/dev. |
+
+---
+
+#### 📄 4. Recursos Nativos (MCP Resources)
+
+O agente de IA pode inspecionar recursos sem executar ferramentas ativas:
+
+1. **`openapi://spec`**: Retorna a especificação OpenAPI completa carregada do projeto para o LLM planejar arquitetura e integrações.
+2. **`infra://health-status`**: Fornece um snapshot consolidado da conectividade de todos os serviços monitorados.
+
+---
+
+#### 🖱️ 5. Integração com a UI do Scalar
+
+Na documentação do Scalar, o botão MCP foi desacoplado dos servidores de registro da nuvem:
+- **VS Code**: Instalação direta via deep link `vscode:mcp/install`.
+- **Cursor**: Instalação direta via deep link `cursor://anysphere.cursor-deeplink/mcp/install`.
+- **Copiar URL**: Copia a URL do endpoint local (`/mcp` ou `http://localhost:5052/mcp`) com toast de confirmação.
 
 ---
 
@@ -734,5 +767,50 @@ Quando aplicações manipulam especificações OpenAPI muito grandes (como ecoss
 ### C. Desreferenciação Assíncrona
 - Para documentos massivos, priorize o pré-processamento de `$ref` em tempo de build/servidor ou via workers assíncronos, reduzindo a carga síncrona na thread principal da interface.
 
+---
 
+## 🛠️ 9. Fluxo de Manutenção Simplificado e Ciclo de Vida do Fork
 
+Para manter a documentação de todos os projetos da equipe sempre atualizada, estável e com esforço operacional mínimo (zero overhead de build nos backends):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as Mantenedor do Fork
+    participant Fork as Repositório scalar (Monorepo)
+    participant GH as GitHub Releases (v1.66.1)
+    participant Projects as Projetos da Equipe (integracaoPDV, etc)
+
+    Note over Dev,Fork: 1. Ajustes de UI, Temas ou Gemini AI
+    Dev->>Fork: corepack pnpm --filter @scalar/api-reference build
+    
+    Note over Dev,GH: 2. Publicação do Bundle Standalone Atualizado
+    Dev->>GH: gh release upload v1.66.1 dist/browser/standalone.js --clobber
+    
+    Note over Dev,Projects: 3. Sincronização Local (se auto-hospedado)
+    Dev->>Projects: cp packages/api-reference/dist/browser/standalone.js backend/app/static/scalar/
+    
+    Note over Projects: Os desenvolvedores do backend apenas rodam a API normalmente!
+```
+
+### 📋 As 2 Regras de Ouro para Manutenção Zero-Stress
+
+1. **Nos Backends Consumidores (`main.py`):**
+   - Use `scalar_js_url="/static/scalar/standalone.js"` (se self-hosted) ou `scalar_js_url="https://github.com/mat-dgruber/scalar/releases/download/v1.66.1/standalone.js"`.
+   - Não instale ferramentas de frontend (Node, Vite, Tailwind) no backend FastAPI. O bundle standalone é auto-suficiente e zero-build.
+
+2. **No Fork (`mat-dgruber/scalar`):**
+   - Após criar temas, refatorar componentes ou ajustar transportes de IA, execute:
+
+     ```bash
+     # 1. Compilar o bundle standalone
+     corepack pnpm --filter @scalar/api-reference build
+
+     # 2. Publicar no GitHub Release v1.66.1 (para todos os projetos)
+     gh release upload v1.66.1 packages/api-reference/dist/browser/standalone.js --clobber --repo mat-dgruber/scalar
+
+     # 3. Atualizar no projeto local (exemplo: integracaoPDV)
+     cp packages/api-reference/dist/browser/standalone.js /Users/matheus.diniz_1/Documents/GitHub/integracaoPDV/backend/app/static/scalar/standalone.js
+     ```
+
+   - Pronto! Todos os projetos recebem as melhorias instantaneamente.
