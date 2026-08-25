@@ -221,6 +221,33 @@ A chave Gemini fica salva **estritamente no `localStorage` do navegador do usuá
 ### A documentação funciona totalmente offline?
 **Sim.** Quando configurada com a Opção 1 (`scalar_js_url="/static/scalar/standalone.js"`), todo o código JavaScript e CSS reside no disco local do servidor, permitindo visualização completa em ambientes sem acesso à internet externa.
 
+### Erro no console: Uncaught ReferenceError: Scalar is not defined ou Violação de CSP (Content Security Policy)
+
+Esse erro ocorre em ambientes corporativos ou de produção com políticas restritivas de Content Security Policy (CSP), especificamente com a diretiva `script-src 'self'`. O navegador bloqueia a execução do Scalar por dois motivos:
+
+1. **Bloqueio de Redirecionamento**: Se você configurou `scalar_js_url="/scalar/standalone.js"`, mas o arquivo físico local `standalone.js` não foi copiado para a pasta `static` do seu deploy, o backend do FastAPI responde com um redirecionamento (307) para o GitHub Releases. O navegador intercepta esse redirecionamento e o bloqueia por violar o `script-src 'self'` (já que o GitHub não é a mesma origem), resultando no erro de carregamento e na ausência do objeto global `Scalar`.
+   - **Solução**: Certifique-se de copiar o arquivo físico `standalone.js` (com cerca de 3.7MB) para a pasta de arquivos estáticos de deploy do servidor para que ele seja servido de forma estática local na mesma origem.
+
+2. **Bloqueio de Script Inline**: Por padrão, o HTML gerado para renderizar o Scalar contém blocos de `<script>` em linha para chamar `Scalar.createApiReference(...)`. A diretiva `script-src 'self'` bloqueia qualquer execução inline para evitar ataques de XSS.
+   - **Solução A (Ajuste de CSP)**: Adicione o hash SHA-256 do erro ao seu cabeçalho HTTP de resposta ou adicione a permissão `'unsafe-inline'` na política de CSP:
+
+     ```http
+     Content-Security-Policy: script-src 'self' 'unsafe-inline'
+     ```
+
+   - **Solução B (Hospedagem Estática de Configuração)**: Se a CSP do seu ambiente corporativo não permitir `'unsafe-inline'`, remova os scripts inline servindo a configuração do Scalar a partir de um arquivo estático externo (como `/static/scalar/scalar.config.js`). O HTML retornado pela rota deve carregar o script standalone local seguido pelo script de configuração local, mantendo-se 100% sob a mesma origem:
+
+     ```html
+     <script src="/scalar/standalone.js"></script>
+     <script src="/static/scalar/scalar.config.js"></script>
+     ```
+
+3. **Bloqueio de Conexões de Rede (`connect-src`) por CSP**: O assistente de IA consulta `https://api.scalar.com/vector/registry/*` para metadados de catálogo. Se o seu `connect-src` bloquear esse domínio, adicione as origens necessárias na CSP do seu servidor:
+
+     ```http
+     Content-Security-Policy: connect-src 'self' blob: data: https://proxy.scalar.com https://generativelanguage.googleapis.com https://api.scalar.com;
+     ```
+
 ---
 
 ## 🤖 8. Servidor MCP Autônomo e Modular (`@scalar/mcp-server`)
@@ -332,4 +359,3 @@ O motor de MCP em `packages/mcp-server/src/openapi/generator.ts` extrai metadado
 - Sanitiza o path para formar nomes de ferramentas válidos (ex.: `GET /pedidos/{id}` -> `get_pedidos_id`).
 - Constrói o `inputSchema` com as tipagens e parâmetros `required`.
 - A fábrica `createScalarMcpServer()` compõe esses endpoints com ferramentas de diagnóstico de infraestrutura e mascaramento de dados sensíveis Zero-Trust.
-

@@ -259,11 +259,39 @@ def scalar_docs():
 ```
 
 > [!WARNING]
-> **Troubleshooting: Por que `jsDelivr` retornava 404 e gerava `Scalar is not defined`?**
-> - CDNs públicas como `cdn.jsdelivr.net` e `unpkg.com` indexam exclusivamente o registro público do npm (`registry.npmjs.org`).
-> - Como o escopo `@mat-dgruber/*` é hospedado no **GitHub Packages** (`npm.pkg.github.com`), o jsDelivr não consegue acessá-lo publicamente, retornando `404 Not Found`.
-> - Quando o script falha com 404, o objeto global `window.Scalar` não é registrado, e o script inline falha imediatamente com `Uncaught ReferenceError: Scalar is not defined`.
-> - **Solução:** Utilize a **Opção 1 (bundle estático local)** ou a **Opção 2 (GitHub Releases)**.
+> **Troubleshooting: Por que `jsDelivr` retornava 404, ou por que ocorre `Scalar is not defined` via CSP (Content Security Policy)?**
+> 1. **Falha de Carregamento de Recursos por CDN**:
+>    - CDNs públicas como `cdn.jsdelivr.net` e `unpkg.com` indexam exclusivamente o registro público do npm (`registry.npmjs.org`). Como o escopo `@mat-dgruber/*` é hospedado no **GitHub Packages** (`npm.pkg.github.com`), o jsDelivr não consegue acessá-lo publicamente, retornando `404 Not Found`.
+>    - Se o script falha com 404, o objeto global `window.Scalar` não é registrado, e o script inline falha imediatamente com `Uncaught ReferenceError: Scalar is not defined`.
+>    - **Solução**: Utilize a **Opção 1 (bundle estático local)** ou a **Opção 2 (GitHub Releases)**.
+>
+> 2. **Bloqueio de Redirecionamento de Script Externo por CSP**:
+>    - Se a diretiva de CSP do servidor estiver configurada como `script-src 'self'`, o navegador impede o carregamento de scripts externos.
+>    - Se você configurou `scalar_js_url="/scalar/standalone.js"`, mas o arquivo físico local não estiver no disco do deploy, a rota do FastAPI faz um redirecionamento temporário (307) para o GitHub Releases. O navegador intercepta o redirecionamento para fora de `'self'` e o bloqueia, causando o erro de carregamento e o `ReferenceError: Scalar is not defined`.
+>    - **Solução**: Garanta o empacotamento físico do arquivo `standalone.js` de 3.7MB no contêiner ou máquina de deploy.
+>
+> 3. **Bloqueio de Scripts em Linha (Inline Scripts) por CSP**:
+>    - A diretiva `script-src 'self'` também impede a execução de scripts em linha no HTML por razões de segurança contra ataques de XSS, bloqueando a inicialização `Scalar.createApiReference(...)`.
+>    - **Solução A**: Ajuste sua política de CSP inserindo o hash de integridade SHA-256 do console ou liberando scripts em linha com `'unsafe-inline'`:
+>
+>      ```http
+>      Content-Security-Policy: script-src 'self' 'unsafe-inline'
+>      ```
+>
+>    - **Solução B**: Separe a inicialização em um arquivo estático local externo (ex.: `/static/scalar/scalar.config.js`) carregando-o logo após o standalone.js estático, eliminando scripts em linha e mantendo total conformidade com `script-src 'self'`:
+>
+>      ```html
+>      <script src="/scalar/standalone.js"></script>
+>      <script src="/static/scalar/scalar.config.js"></script>
+>      ```
+>
+> 4. **Bloqueio de Conexões de Rede (`connect-src`) por CSP**:
+>    - Ao inicializar o assistente de IA ou o catálogo curado, o Scalar realiza chamadas para `https://api.scalar.com/vector/registry/*`. Se a sua diretiva `connect-src` não incluir esse domínio, o navegador emitirá o erro `Connecting to 'https://api.scalar.com/vector/registry/...' violates connect-src`.
+>    - **Solução**: Atualize o `connect-src` da sua CSP para incluir todas as origens necessárias para o Scalar e Google Gemini:
+>
+>      ```http
+>      Content-Security-Policy: connect-src 'self' blob: data: https://proxy.scalar.com https://generativelanguage.googleapis.com https://api.scalar.com;
+>      ```
 
 ---
 
