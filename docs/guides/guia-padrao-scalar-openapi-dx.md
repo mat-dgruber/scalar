@@ -32,6 +32,10 @@ Data       | Autor          | Descrição da Alteração
            | (OpenClaude)   | Integração direta OpenClaude & Antigravity no botão MCP,
            |                | injeção de contexto de endpoint no "Ask AI Agent" e
            |                | menções inteligentes de endpoints com `@` e `/` no chat.
+2026-08-24 | Matheus Diniz  | Atualização v2.7.0: Ecossistema de DX e IA Expandido:
+           | (Antigravity)  | Novo pacote @scalar/openapi-diff (breaking changes detector),
+           |                | middleware universal scalarMcp (Hono/Express), tokens de
+           |                | densidade compacta (.scalar-compact) e dereferenceAsync.
 =================================================================================
 -->
 
@@ -847,3 +851,64 @@ sequenceDiagram
      ```
 
    - Pronto! Todos os projetos recebem as melhorias instantaneamente.
+
+---
+
+## 🔍 10. Análise Semântica de Mudanças & CI/CD Gate (`@scalar/openapi-diff`)
+
+Para proteger os clientes em produção contra *breaking changes* acidentais na API, utilize o `@scalar/openapi-diff` em scripts de validação de PR ou pipelines de CI:
+
+```typescript
+import { diffOpenApi, formatDiffMarkdown } from '@scalar/openapi-diff'
+import { readFileSync } from 'node:fs'
+
+const specProducao = JSON.parse(readFileSync('./openapi.prod.json', 'utf-8'))
+const specNova = JSON.parse(readFileSync('./openapi.dev.json', 'utf-8'))
+
+const diff = diffOpenApi(specProducao, specNova)
+
+console.log(`Recomendação SemVer: ${diff.recommendedBump.toUpperCase()}`)
+
+if (diff.breaking.length > 0) {
+  console.error('🚨 Breaking changes detectadas!')
+  console.log(formatDiffMarkdown(diff))
+  process.exit(1) // Bloqueia o merge da PR ou deploy
+}
+```
+
+---
+
+## 🤖 11. Middleware Universal MCP para Backends (`scalarMcp`)
+
+Qualquer backend Hono ou Express pode expor seus endpoints como ferramentas fortemente tipadas para agentes de IA com apenas 1 linha de código:
+
+```typescript
+import { Hono } from 'hono'
+import { Scalar, scalarMcp } from '@scalar/hono-api-reference'
+
+const app = new Hono()
+
+// Documentação visual interativa
+app.get('/reference', Scalar({ spec: { url: '/openapi.json' } }))
+
+// Servidor MCP para OpenClaude, Antigravity e Cursor
+app.all('/mcp', scalarMcp({ spec: '/openapi.json' }))
+```
+
+---
+
+## 🎨 12. Modos de Densidade de Layout (Compact vs Comfortable)
+
+Para APIs complexas com centenas de rotas ou desenvolvedores que preferem alta densidade visual (menos rolagem e espaçamentos otimizados):
+
+```html
+<!-- Ative a classe .scalar-compact no container do Scalar -->
+<div class="scalar-app scalar-compact">
+  <!-- Documentação renderizada com ritmo vertical compacto -->
+</div>
+```
+
+Tokens CSS customizáveis no tema:
+- `--scalar-density-gap`: Espaçamento padrão de grids e flexboxes (`16px` normal / `8px` compact).
+- `--scalar-density-padding`: Padding interno de cartões e parâmetros (`16px` normal / `8px` compact).
+- `--scalar-density-section-space`: Separação entre seções de endpoints (`32px` normal / `16px` compact).

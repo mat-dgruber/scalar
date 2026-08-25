@@ -27,6 +27,44 @@ Scalar is an open-source API platform for teams who want beautiful developer int
 
 ---
 
+## Usage
+
+### 1. Interactive API Documentation
+
+```typescript
+import { Hono } from 'hono'
+import { Scalar } from '@scalar/hono-api-reference'
+
+const app = new Hono()
+
+app.get(
+  '/reference',
+  Scalar({
+    spec: {
+      url: '/openapi.json',
+    },
+  }),
+)
+
+export default app
+```
+
+### 2. AI Model Context Protocol (MCP) Endpoint
+
+Transform your OpenAPI routes into tools for AI agents (OpenClaude, Antigravity, Cursor, Copilot) with a single line:
+
+```typescript
+import { Hono } from 'hono'
+import { scalarMcp } from '@scalar/hono-api-reference'
+
+const app = new Hono()
+
+// Expose JSON-RPC 2.0 MCP tools/list and tools/call endpoint
+app.all('/mcp', scalarMcp({ spec: '/openapi.json' }))
+
+export default app
+```
+
 ## Documentation
 
 [Read the documentation here](https://scalar.com/products/api-references/integrations/hono)

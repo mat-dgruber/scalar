@@ -68,6 +68,16 @@ const specification = `{
 const { schema, errors } = await dereference(specification)
 ```
 
+### Resolve references asynchronously (Non-blocking)
+
+For massive OpenAPI specifications (>10MB to 50MB+), use `dereferenceAsync` to yield the main execution thread and prevent interface freezes:
+
+```ts
+import { dereferenceAsync } from '@scalar/openapi-parser'
+
+const { schema, errors } = await dereferenceAsync(largeSpecification)
+```
+
 ### Track references
 
 The `dereference` function accepts an `onDereference` callback option that gets called whenever a reference is resolved. This can be useful for tracking which schemas are being dereferenced:

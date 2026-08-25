@@ -41,6 +41,21 @@ Because many Scalar applications are embedded into other websites the reset is s
 </body>
 ```
 
+## Density Modes (Compact vs Comfortable)
+
+Scalar supports configurable layout density. For high-information views or power-user developer documentation, add the `.scalar-compact` class alongside `.scalar-app`:
+
+```html
+<div class="scalar-app scalar-compact">
+  <!-- High-density documentation with compact vertical rhythm -->
+</div>
+```
+
+The density scale derives from customizable CSS tokens:
+- `--scalar-density-gap` (default: `16px`, compact: `8px`)
+- `--scalar-density-padding` (default: `16px`, compact: `8px`)
+- `--scalar-density-section-space` (default: `32px`, compact: `16px`)
+
 ## Installation
 
 ```bash

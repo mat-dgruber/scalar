@@ -24,9 +24,12 @@ graph TD
     subgraph "Monorepo de Bibliotecas (pnpm + Turbo)"
         Core["@scalar/api-reference (Engine de Renderização Vue 3)"]
         Chat["@scalar/agent-chat (Assistente de IA BYOK)"]
-        Themes["@scalar/themes (16 Presets & Design Tokens)"]
+        Themes["@scalar/themes (16 Presets & Density Tokens)"]
         Types["@scalar/types (Contratos TypeScript & Tipagens)"]
-        MCP["@scalar/mcp-server (Servidor MCP Stdio Zero-Trust)"]
+        MCP["@scalar/mcp-server (Servidor MCP Dinâmico Zero-Trust)"]
+        Diff["@scalar/openapi-diff (Detector Semântico de Breaking Changes)"]
+        Parser["@scalar/openapi-parser (Parser Síncrono & Assíncrono)"]
+        HonoMCP["@scalar/hono-api-reference (Middleware scalarMcp)"]
         PyPkg["scalar_fastapi (Biblioteca Python / Pydantic)"]
     end
 
@@ -36,7 +39,7 @@ graph TD
 
     subgraph "Consumo pelos Projetos da Equipe"
         FastAPI["FastAPI / Python (ex: integracaoPDV)"]
-        NodeJS["Node.js / Express / NestJS"]
+        NodeJS["Node.js / Express / NestJS / Hono"]
         HTML["Qualquer Backend / Página Estática"]
     end
 
@@ -44,6 +47,8 @@ graph TD
     Standalone -->|1. Auto-Hospedagem Estática| FastAPI
     Standalone -->|2. CDN / GitHub Releases| NodeJS & HTML
     PyPkg -->|Configuração Tipada| FastAPI
+    Diff -->|Validação de CI/CD| FastAPI & NodeJS
+    HonoMCP -->|Rotas MCP para IA| NodeJS
 ```
 
 ### As 3 Formas em que o Fork é Distribuído:
@@ -74,7 +79,11 @@ O fork `@mat-dgruber/scalar` adiciona recursos fundamentais para ambientes corpo
 | **Ask AI Agent por Rota** | Apenas abre o chat genérico sem contexto | **Injeção Automática de Metadados** `[Endpoint: METODO /path]` |
 | **Menções no Chat (@ e /)** | Inexistente (digitação manual) | **Autocomplete de Endpoints** com badges de método e navegação por setas |
 | **Botão MCP na UI** | Redirecionamento para cadastro em nuvem | **Ações Locais para OpenClaude & Antigravity** + Deep Links |
-| **Servidor MCP Autônomo** | Registros e proxies em cloud externa | **@scalar/mcp-server Stdio Local Zero-Trust** (OpenClaude & Antigravity) |
+| **Servidor MCP Autônomo** | Registros e proxies em cloud externa | **@scalar/mcp-server Stdio & Dynamic Tools** (OpenClaude & Antigravity) |
+| **Middleware MCP em Frameworks** | Inexistente | **scalarMcp** nativo para Hono e Express |
+| **Análise Semântica de Diff** | Inexistente | **@scalar/openapi-diff** com recomendação SemVer para CI/CD |
+| **Densidade de Layout** | Apenas espaçamento fixo | **Tokens de Densidade** (`.scalar-compact` para desenvolvedores pro) |
+| **Parsing Não-Bloqueante** | Síncrono (bloqueia thread em specs grandes) | **dereferenceAsync()** no `@scalar/openapi-parser` |
 | **Acesso em VPN/Intranet** | Desativava Dev Tools e Agent em IPs privados | **Suporte Completo a RFC 1918** (`10.x`, `192.168.x`, `172.16-31.x`) |
 | **Reatividade de Temas** | Exigia reload da página ao trocar tema | **Reatividade Instantânea no DOM** + Sync Multi-Abas |
 | **Temas Exclusivos** | Presets básicos | **16 Presets** (incluindo *Kepler*, *Harpia*, *CCAT Atelier*, *Cinematic Noir*) |
@@ -299,3 +308,28 @@ Três componentes-chave foram desenhados e implementados para proporcionar uma e
 - Mapeia em tempo real a árvore de rotas OpenAPI ativa (`getActiveDocumentJson().paths`).
 - Exibe badges coloridos de métodos HTTP (`GET`, `POST`, `PUT`, `DELETE`) e resumos de cada operação.
 - Suporta navegação fluida por teclado (`ArrowUp`, `ArrowDown`, `Enter`, `Escape`), inserindo automaticamente a referência do endpoint no prompt.
+
+---
+
+## 🔍 10. Arquitetura do Detector Semântico de Mudanças (`@scalar/openapi-diff`)
+
+Localizado em `packages/openapi-diff/`, este pacote opera como um comparador de AST e grafo de rotas:
+
+1. **`diff.ts`:**
+   - Compara recursivamente a estrutura de paths, métodos, parâmetros, request bodies e schemas de resposta.
+   - Aplica regras determinísticas de compatibilidade (ex.: novo parâmetro obrigatório = `BREAKING`, código 200 removido = `BREAKING`, novo endpoint = `NON-BREAKING`).
+   - Computa a recomendação SemVer (`major`, `minor`, `patch`, `none`).
+
+2. **`reporter.ts`:**
+   - Transforma o objeto estruturado `DiffResult` em Markdown visual pronto para relatórios de Pull Request e logs de pipeline CI/CD.
+
+---
+
+## ⚡ 11. Geração Dinâmica de Ferramentas MCP (`@scalar/mcp-server`)
+
+O motor de MCP em `packages/mcp-server/src/openapi/generator.ts` extrai metadados completos de cada endpoint OpenAPI para criar ferramentas nativas:
+
+- Sanitiza o path para formar nomes de ferramentas válidos (ex.: `GET /pedidos/{id}` -> `get_pedidos_id`).
+- Constrói o `inputSchema` com as tipagens e parâmetros `required`.
+- A fábrica `createScalarMcpServer()` compõe esses endpoints com ferramentas de diagnóstico de infraestrutura e mascaramento de dados sensíveis Zero-Trust.
+
