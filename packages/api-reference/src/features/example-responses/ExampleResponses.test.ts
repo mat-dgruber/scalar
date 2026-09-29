@@ -351,7 +351,7 @@ describe('ExampleResponses', () => {
 
     await copyButton.trigger('click')
 
-    expect(mockCopyToClipboard).toHaveBeenCalledWith({ foo: 'bar' })
+    expect(mockCopyToClipboard).toHaveBeenCalledWith(JSON.stringify({ foo: 'bar' }, null, 2))
   })
 
   it('toggles between schema and example view', async () => {
