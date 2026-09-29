@@ -11,6 +11,9 @@ export async function uploadTempDocument(
   document: string,
   urls: Pick<ExternalUrls, 'proxyUrl' | 'apiBaseUrl'>,
 ): Promise<string> {
+  if (!urls?.apiBaseUrl) {
+    throw new Error('External document sharing is disabled when apiBaseUrl is not configured.')
+  }
   const body = JSON.stringify({ document })
   const uploadUrl = `${urls.apiBaseUrl}/core/share/upload/apis`
 

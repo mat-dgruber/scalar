@@ -11,9 +11,54 @@ import { afterEach, expect, vi } from 'vitest'
 
 import { createPluginManager } from '@/plugins/plugin-manager'
 
+// In-memory localStorage mock for Node 22+ experimental storage environment
+let mockStore: Record<string, string> = {}
+const mockLocalStorage = {
+  getItem: (key: string) => mockStore[key] ?? null,
+  setItem: (key: string, value: string) => {
+    mockStore[key] = String(value)
+  },
+  removeItem: (key: string) => {
+    delete mockStore[key]
+  },
+  clear: () => {
+    mockStore = {}
+  },
+  get length() {
+    return Object.keys(mockStore).length
+  },
+  key: (i: number) => Object.keys(mockStore)[i] ?? null,
+}
+
+Object.defineProperty(globalThis, 'localStorage', {
+  value: mockLocalStorage,
+  writable: true,
+  configurable: true,
+})
+
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', {
+    value: mockLocalStorage,
+    writable: true,
+    configurable: true,
+  })
+}
+
 // Mock usePluginManager
 vi.mock('@/plugins/hooks/usePluginManager', () => ({
   usePluginManager: vi.fn(() => createPluginManager({})),
+}))
+
+// Mock @scalar/use-toasts to prevent vue-sonner Toaster ref crash under JSDOM
+vi.mock('@scalar/use-toasts', () => ({
+  ScalarToasts: {
+    name: 'ScalarToasts',
+    render: () => null,
+  },
+  useToasts: () => ({
+    initializeToasts: vi.fn(),
+    toast: vi.fn(),
+  }),
 }))
 
 afterEach(() => {

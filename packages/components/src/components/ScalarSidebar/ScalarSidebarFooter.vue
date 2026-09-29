@@ -41,12 +41,7 @@ const { cx } = useBindCx()
     <div class="flex items-center">
       <div class="flex-1 min-w-0 flex items-center text-sm text-sidebar-c-2">
         <slot name="description">
-          <a
-            class="no-underline hover:underline"
-            href="https://www.scalar.com"
-            target="_blank">
-            Powered by Scalar
-          </a>
+          <span class="select-none"> Scalar API Reference </span>
         </slot>
       </div>
       <slot name="toggle">
