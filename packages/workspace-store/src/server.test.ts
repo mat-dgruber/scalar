@@ -471,7 +471,7 @@ describe('create-server-store', () => {
         ]),
       ).toBe(true)
 
-      await fs.rmdir(basePath, { recursive: true })
+      await fs.rm(basePath, { recursive: true, force: true })
     })
   })
 

@@ -3,15 +3,11 @@ import type { Workspace } from '@/schemas/workspace'
 export type Layout = 'web' | 'other'
 
 /**
- * Returns the default proxy URL for web layout.
- * For the 'web' layout, this ensures requests use Scalar's hosted proxy unless overridden,
- * which is important for browser environments with CORS or network restrictions.
- * For 'desktop' or 'modal' layouts, returns null to indicate no proxy by default.
+ * Returns the default proxy URL.
+ * In this self-hosted environment, returns null by default to avoid leaking
+ * requests or routing traffic through external cloud proxy servers.
  */
-export const getDefaultProxyUrl = (layout: Layout) => {
-  if (layout === 'web') {
-    return 'https://proxy.scalar.com'
-  }
+export const getDefaultProxyUrl = (_layout: Layout) => {
   return null
 }
 
