@@ -311,10 +311,10 @@ describe('api-reference-configuration', () => {
 
   describe('externalUrls', () => {
     const expectedDefaults = {
-      dashboardUrl: 'https://dashboard.scalar.com',
-      registryUrl: 'https://registry.scalar.com',
-      proxyUrl: 'https://proxy.scalar.com',
-      apiBaseUrl: 'https://api.scalar.com',
+      dashboardUrl: '',
+      registryUrl: '',
+      proxyUrl: '',
+      apiBaseUrl: '',
     }
 
     it('provides all default URLs when config is empty', () => {

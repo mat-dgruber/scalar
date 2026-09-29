@@ -3,6 +3,7 @@ import z from 'zod'
 import { apiClientPluginSchema } from './api-client-plugin'
 
 export type GeminiModel =
+  | 'gemini-3.8-flash'
   | 'gemini-3.7-flash'
   | 'gemini-3.6-flash'
   | 'gemini-3.5-flash'
@@ -13,6 +14,7 @@ export type GeminiModel =
   | (string & {})
 
 export const geminiModelSchema = z.union([
+  z.literal('gemini-3.8-flash'),
   z.literal('gemini-3.7-flash'),
   z.literal('gemini-3.6-flash'),
   z.literal('gemini-3.5-flash'),
@@ -25,7 +27,7 @@ export const geminiModelSchema = z.union([
 
 export const geminiConfigSchema = z.object({
   apiKey: z.string().optional(),
-  model: geminiModelSchema.optional().default('gemini-3.7-flash'),
+  model: geminiModelSchema.optional().default('gemini-3.8-flash'),
   baseUrl: z.string().optional(),
 })
 
@@ -43,10 +45,10 @@ export const agentConfigurationSchema = z.object({
 export type AgentConfiguration = z.infer<typeof agentConfigurationSchema>
 
 const externalUrlsSchema = z.object({
-  dashboardUrl: z.string().prefault('https://dashboard.scalar.com'),
-  registryUrl: z.string().prefault('https://registry.scalar.com'),
-  proxyUrl: z.string().prefault('https://proxy.scalar.com'),
-  apiBaseUrl: z.string().prefault('https://api.scalar.com'),
+  dashboardUrl: z.string().prefault(''),
+  registryUrl: z.string().prefault(''),
+  proxyUrl: z.string().prefault(''),
+  apiBaseUrl: z.string().prefault(''),
 })
 
 /** External service URLs used by Scalar packages */
@@ -210,7 +212,7 @@ export const baseConfigurationSchema = z.object({
   /** Plugins for the API client */
   plugins: z.array(apiClientPluginSchema).optional(),
   /** Enables / disables telemetry */
-  telemetry: z.boolean().optional().default(true),
+  telemetry: z.boolean().optional().default(false),
   /** A bunch of external URLs to Scalar's services. */
   externalUrls: externalUrlsSchema.prefault({}),
   /** AI Agent configuration */

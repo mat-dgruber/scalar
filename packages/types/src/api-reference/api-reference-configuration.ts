@@ -390,9 +390,9 @@ export const apiReferenceConfigurationSchema = baseConfigurationSchema.extend({
     .optional(),
   /**
    * Whether to include default fonts
-   * @default true
+   * @default false
    */
-  withDefaultFonts: z.boolean().optional().default(true).catch(true),
+  withDefaultFonts: z.boolean().optional().default(false).catch(false),
   /**
    * Whether to expand the first tag in the sidebar when no specific URL target is present
    * @default true

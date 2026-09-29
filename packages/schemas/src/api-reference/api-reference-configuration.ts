@@ -230,7 +230,7 @@ export const apiReferenceConfigurationSchema = intersection([
         'To handle redirects, pass a function that receives the current path/hash and passes that to history.replaceState',
     }),
     withDefaultFonts: boolean({
-      default: true,
+      default: false,
       typeComment: 'Whether to include default fonts',
     }),
     defaultOpenFirstTag: boolean({

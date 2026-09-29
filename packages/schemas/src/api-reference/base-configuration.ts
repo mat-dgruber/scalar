@@ -4,6 +4,7 @@ export const geminiConfigSchema = object({
   apiKey: optional(string(), { typeComment: 'Google Gemini API key' }),
   model: optional(
     union([
+      literal('gemini-3.8-flash'),
       literal('gemini-3.7-flash'),
       literal('gemini-3.6-flash'),
       literal('gemini-3.5-flash'),
@@ -13,7 +14,7 @@ export const geminiConfigSchema = object({
       literal('gemini-2.5-flash'),
       string(),
     ]),
-    { typeComment: 'Gemini model identifier. Defaults to gemini-3.7-flash' },
+    { typeComment: 'Gemini model identifier. Defaults to gemini-3.8-flash' },
   ),
   baseUrl: optional(string(), { typeComment: 'Custom base URL or proxy URL for Gemini API' }),
 })
@@ -32,10 +33,10 @@ export const agentConfigurationSchema = object({
 
 const externalUrlsSchema = object(
   {
-    dashboardUrl: string({ default: 'https://dashboard.scalar.com' }),
-    registryUrl: string({ default: 'https://registry.scalar.com' }),
-    proxyUrl: string({ default: 'https://proxy.scalar.com' }),
-    apiBaseUrl: string({ default: 'https://api.scalar.com' }),
+    dashboardUrl: string({ default: '' }),
+    registryUrl: string({ default: '' }),
+    proxyUrl: string({ default: '' }),
+    apiBaseUrl: string({ default: '' }),
   },
   {
     typeComment: 'External service URLs used by Scalar packages',
@@ -177,7 +178,7 @@ export const baseConfigurationSchema = object({
     typeComment: 'Whether to persist auth to local storage',
   }),
   telemetry: boolean({
-    default: true,
+    default: false,
     typeComment: 'Enables / disables telemetry',
   }),
   externalUrls: externalUrlsSchema,
