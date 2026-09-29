@@ -36,6 +36,10 @@ Data       | Autor          | Descrição da Alteração
            | (Antigravity)  | Novo pacote @scalar/openapi-diff (breaking changes detector),
            |                | middleware universal scalarMcp (Hono/Express), tokens de
            |                | densidade compacta (.scalar-compact) e dereferenceAsync.
+2026-09-29 | Matheus Diniz  | Atualização v2.8.0: Suporte nativo ao Google Gemini 3.8 Flash
+           | (OpenClaude)   | como modelo padrão recomendado, isolamento completo de nuvem
+           |                | pública (Zero-Cloud / Air-Gapped / ADR 0001), telemetria e
+           |                | fontes remotas desativadas por padrão, e remoção de proxy externo.
 =================================================================================
 -->
 
@@ -124,7 +128,7 @@ Após rodar esses dois comandos, qualquer `npm install`, `pnpm add` ou `yarn add
      agent: {
        provider: 'gemini',
        gemini: {
-         model: 'gemini-3.7-flash', // Padrão recomendado (ou gemini-2.5-pro, gemini-3.6-flash, etc.)
+         model: 'gemini-3.8-flash', // Padrão recomendado (ou gemini-2.5-flash, gemini-2.5-pro, etc.)
          apiKey: process.env.VITE_GEMINI_API_KEY, // Opcional (o usuário pode preencher via modal ⚙️ no chat)
        },
      },
@@ -175,7 +179,7 @@ No Angular (Standalone Components ou Tradicional), o Scalar deve ser montado no 
            agent: {
              provider: 'gemini',
              gemini: {
-               model: 'gemini-3.7-flash', // Padrão recomendado
+               model: 'gemini-3.8-flash', // Padrão recomendado
                // apiKey: 'opcional' -> o usuário pode configurar pelo modal ⚙️ no chat
              },
            },
@@ -285,12 +289,12 @@ def scalar_docs():
 >      <script src="/static/scalar/scalar.config.js"></script>
 >      ```
 >
-> 4. **Bloqueio de Conexões de Rede (`connect-src`) por CSP**:
->    - Ao inicializar o assistente de IA ou o catálogo curado, o Scalar realiza chamadas para `https://api.scalar.com/vector/registry/*`. Se a sua diretiva `connect-src` não incluir esse domínio, o navegador emitirá o erro `Connecting to 'https://api.scalar.com/vector/registry/...' violates connect-src`.
->    - **Solução**: Atualize o `connect-src` da sua CSP para incluir todas as origens necessárias para o Scalar e Google Gemini:
+> 4. **Conexões de Rede (`connect-src`) por CSP e Isolamento Zero-Cloud (ADR 0001)**:
+>    - No fork `@mat-dgruber/scalar`, as chamadas externas para `proxy.scalar.com`, `api.scalar.com` e telemetria foram **completamente eliminadas por padrão**. A única conexão externa necessária para recursos de IA é a API oficial do Google Gemini.
+>    - **Solução**: Sua política de CSP pode ser configurada de forma estrita e segura sem abrir exceções para a nuvem pública da Scalar:
 >
 >      ```http
->      Content-Security-Policy: connect-src 'self' blob: data: https://proxy.scalar.com https://generativelanguage.googleapis.com https://api.scalar.com;
+>      Content-Security-Policy: default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' blob: data: https://generativelanguage.googleapis.com;
 >      ```
 
 ---
@@ -298,10 +302,10 @@ def scalar_docs():
 ### D. Como Funciona a Seleção de Modelos e BYOK no Chat
 
 O Scalar integrado com Gemini possui um seletor visual e persistência automática:
-- **Modelos Frontier (3.x)**: `gemini-3.7-flash` (Padrão), `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.1-pro`, `gemini-3.1-flash-lite`.
-- **Modelos Stable (2.5)**: `gemini-2.5-pro`, `gemini-2.5-flash`.
-- **Modelos Customizados**: Qualquer modelo suportado pela API do Google.
-- **Hierarquia de Precedência:** `localStorage (Configurado via modal ⚙️ pelo usuário)` > `Props passadas no código` > `Default (gemini-3.7-flash)`.
+- **Modelo Padrão e Recomendado**: `gemini-3.8-flash` (alta velocidade, raciocínio aprimorado e grande janela de contexto).
+- **Modelos Alternativos Suportados**: `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-1.5-flash`.
+- **Modelos Customizados**: Qualquer modelo suportado pela API do Google Generative Language.
+- **Hierarquia de Precedência:** `localStorage (Configurado via modal ⚙️ pelo usuário)` > `Props passadas no código` > `Default (gemini-3.8-flash)`.
 
 ---
 
@@ -504,7 +508,9 @@ async def scalar_html():
     return get_scalar_api_reference(
         openapi_url=app.openapi_url,  # /openapi.json gerado pelo FastAPI
         title=app.title,
-        scalar_proxy_url="https://proxy.scalar.com",  # evita CORS no "Test Request"
+        # Zero-Cloud (ADR 0001): sem proxy externo por padrão. As requisições são diretas.
+        # Caso necessite de proxy local para contornar CORS em dev, aponte para um proxy interno corporativo.
+        scalar_proxy_url=None,
     )
 ```
 
@@ -695,7 +701,7 @@ IS_PROD = os.getenv("ENV") == "production"
 async def scalar_html():
     return get_scalar_api_reference(
         openapi_url=app.openapi_url,
-        scalar_proxy_url="https://proxy.scalar.com",
+        scalar_proxy_url=None,  # Zero-Cloud (ADR 0001)
         show_developer_tools="never" if IS_PROD else "localhost",
         agent=AgentScalarConfig(disabled=True),
         servers=[
@@ -792,7 +798,7 @@ def docs_scalar(app, servers):
         openapi_url=app.openapi_url,
         title=app.title,
         theme=Theme.DEFAULT,
-        scalar_proxy_url="https://proxy.scalar.com",
+        scalar_proxy_url=None,  # Zero-Cloud (ADR 0001)
         persist_auth=True,
         agent=AgentScalarConfig(disabled=True),
         servers=servers,

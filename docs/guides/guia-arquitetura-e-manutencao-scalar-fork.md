@@ -6,8 +6,14 @@ DOCUMENTO DE ENGENHARIA E ARQUITETURA DE SOFTWARE
 =================================================================================
 Título:      Arquitetura, Melhorias e Guia de Manutenção do Fork Scalar
 Autor:       Matheus Diniz (@mat-dgruber)
-Versão:      1.0.0 (2026-08-24)
+Versão:      1.1.0 (2026-09-29)
 Repositório: https://github.com/mat-dgruber/scalar
+=================================================================================
+Histórico de Versões:
+- 1.0.0 (2026-08-24): Versão inicial com suporte a Gemini BYOK, MCP server e openapi-diff.
+- 1.1.0 (2026-09-29): Suporte nativo ao Google Gemini 3.8 Flash como padrão,
+                     isolamento total de nuvem pública (Zero-Cloud / Air-Gapped / ADR 0001),
+                     remoção do proxy padrão externo, telemetria desativada por padrão e fontes do sistema.
 =================================================================================
 -->
 
@@ -74,7 +80,11 @@ O fork `@mat-dgruber/scalar` adiciona recursos fundamentais para ambientes corpo
 
 | Funcionalidade | Upstream Oficial (`@scalar/scalar`) | Nosso Fork (`@mat-dgruber/scalar`) |
 | :--- | :---: | :---: |
-| **IA Assistant (Chat)** | Apenas backend proprietário pago da Scalar | **Google Gemini Nativo (BYOK)** + Model Selector |
+| **IA Assistant (Chat)** | Apenas backend proprietário pago da Scalar | **Google Gemini Nativo (BYOK)** com **Gemini 3.8 Flash** padrão |
+| **Isolamento de Nuvem (Zero-Cloud)** | Redireciona tráfego para `proxy.scalar.com` | **100% Autônomo e Air-Gapped** (`proxyUrl: null` por padrão, sem vazamentos) |
+| **Privacidade & Telemetria** | Telemetria PostHog ativada por padrão | **Telemetria Desativada por Padrão** (`telemetry: false` em schemas/tipos) |
+| **Tipografia & Fontes** | Download obrigatório de `fonts.scalar.com` | **Fontes Nativas do Sistema** (`withDefaultFonts: false` padrão) |
+| **Registry & Uploads** | Consulta registry em nuvem e upload irrestrito | **Bloqueio Defensivo** contra uploads externos sem `apiBaseUrl` corporativo |
 | **Contexto OpenAPI na IA** | Servidor de embeddings da nuvem | **Injeção Dinâmica em Tempo Real** via `systemInstruction` |
 | **Ask AI Agent por Rota** | Apenas abre o chat genérico sem contexto | **Injeção Automática de Metadados** `[Endpoint: METODO /path]` |
 | **Menções no Chat (@ e /)** | Inexistente (digitação manual) | **Autocomplete de Endpoints** com badges de método e navegação por setas |
@@ -107,15 +117,17 @@ sequenceDiagram
     Dev->>UI: Pergunta: "Quais endpoints de login existem nessa API?"
     UI->>Store: getActiveDocumentJson() -> Exporta JSON OpenAPI completo
     Note over UI: Monta systemInstruction com o JSON da API + Prompt do Dev
-    UI->>Gemini: POST /v1beta/models/gemini-3.7-flash:streamGenerateContent (Chave BYOK)
-    Gemini-->>UI: Stream de Resposta com endpoints, schemas e exemplos de código
+    UI->>Gemini: POST /v1beta/models/gemini-3.8-flash:streamGenerateContent (Chave BYOK)
+    Gemini-->>UI: Stream SSE de Resposta com endpoints, schemas e exemplos de código
     UI-->>Dev: Resposta técnica precisa em tempo real
 ```
 
-### Detalhes de Implementação (`packages/agent-chat/src/state/state.ts`):
+### Detalhes de Implementação (`packages/agent-chat/src/transports/gemini-chat-transport.ts`):
+- O modelo padrão e recomendado é o `gemini-3.8-flash` (com fallback selecionável para `gemini-2.5-flash`, `gemini-2.5-pro` e `gemini-1.5-flash`).
 - O transporte `GeminiChatTransport` recebe uma closure `systemInstruction: () => string`.
 - Em toda mensagem disparada, a função exporta o JSON atual da API via `getActiveDocumentJson()`.
-- O modelo (ex: `gemini-3.7-flash`, com contexto de 1 milhão de tokens) recebe a especificação inteira na instrução de sistema, garantindo respostas 100% contextualizadas sobre parâmetros, rotas e códigos de erro da API.
+- O modelo recebe a especificação inteira na instrução de sistema e executa chamadas de ferramenta de OpenAPI diretamente no navegador do usuário.
+- **Privacidade Absoluta (Zero-Cloud)**: A comunicação é feita exclusivamente entre o navegador do usuário e o endpoint oficial da Google Generative Language API (`generativelanguage.googleapis.com`), sem transitar por servidores de telemetria ou proxies da Scalar (formalizado na **ADR 0001**).
 
 ---
 
@@ -242,10 +254,10 @@ Esse erro ocorre em ambientes corporativos ou de produção com políticas restr
      <script src="/static/scalar/scalar.config.js"></script>
      ```
 
-3. **Bloqueio de Conexões de Rede (`connect-src`) por CSP**: O assistente de IA consulta `https://api.scalar.com/vector/registry/*` para metadados de catálogo. Se o seu `connect-src` bloquear esse domínio, adicione as origens necessárias na CSP do seu servidor:
+3. **Conexões de Rede (`connect-src`) por CSP**: No fork `@mat-dgruber/scalar` com isolamento total (ADR 0001), as chamadas para `proxy.scalar.com`, `api.scalar.com` e telemetria foram **completamente eliminadas**. A única conexão externa necessária para recursos de IA é a API oficial do Google Gemini. Sua CSP torna-se limpa, estrita e segura:
 
      ```http
-     Content-Security-Policy: connect-src 'self' blob: data: https://proxy.scalar.com https://generativelanguage.googleapis.com https://api.scalar.com;
+     Content-Security-Policy: default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' blob: data: https://generativelanguage.googleapis.com;
      ```
 
 ---
