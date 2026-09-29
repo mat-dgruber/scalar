@@ -13,8 +13,8 @@ Data       | Autor          | Descrição
 | Metadado | Detalhe |
 | :--- | :--- |
 | **Escopo Principal** | Isolamento de Nuvem Scalar e Integração Nativa do Gemini 3.8 Flash |
-| **Commits Gerados** | 6 (5 micro-commits de código + 1 de governança e documentação) |
-| **Arquivos Modificados** | 42 arquivos |
+| **Commits Gerados** | 8 (6 de código e testes + 2 de governança, documentação e guias) |
+| **Arquivos Modificados** | 45 arquivos |
 | **ADRs Vinculadas / Geradas** | `docs/adr/0001-isolamento-infraestrutura-scalar-cloud-e-gemini-38-flash.md` |
 
 ---
@@ -68,7 +68,10 @@ graph TD
 | `packages/helpers/src/object/local-storage.ts` | Core Helpers | Fallback em memória resiliente para `safeLocalStorage` no Node 22 |
 | `packages/api-reference/src/helpers/upload-temp-document.ts` | Core Reference | Trava de segurança impedindo compartilhamento externo sem URL base |
 | `packages/api-reference/src/vitest.setup.ts` | Test Harness | Polyfill em memória de storage e isolamento de sonner toasts no JSDOM |
+| `packages/api-reference/src/features/example-responses/ExampleResponses.test.ts` | Test Suite | Alinhamento de asserção da cópia de JSON formatado |
 | `docs/adr/0001-isolamento-infraestrutura-scalar-cloud-e-gemini-38-flash.md` | Governança | ADR formal sobre isolamento de nuvem e modelo Gemini 3.8 Flash |
+| `docs/guides/guia-arquitetura-e-manutencao-scalar-fork.md` | Documentação | Atualização da arquitetura, ADR 0001 e suporte Gemini 3.8 |
+| `docs/guides/guia-padrao-scalar-openapi-dx.md` | Documentação | Guia canônico atualizado com padrão Zero-Cloud e Gemini 3.8 |
 
 ---
 
@@ -114,9 +117,29 @@ graph TD
   - `packages/api-reference/src/helpers/upload-temp-document.ts`: Trava defensiva.
   - `packages/api-reference/src/vitest.setup.ts`: Setup de testes unitários.
 
+### `docs(guides): atualizar arquitetura e guia padrao com gemini-3.8-flash e ADR 0001`
+- **Razão da alteração:** Manter a documentação técnica interna alinhada às decisões arquiteturais e operacionais aprovadas na ADR 0001.
+- **Comportamento atual:** Guias detalham o isolamento estrito da Scalar Cloud, fluxo de streaming SSE com Gemini 3.8 Flash e políticas de CSP Zero-Trust.
+- **Decisões técnicas & ADRs:** ADR 0001.
+- **Arquivos envolvidos:**
+  - `docs/guides/guia-arquitetura-e-manutencao-scalar-fork.md`: Versão 1.1.0 com diagramas e fluxos.
+  - `docs/guides/guia-padrao-scalar-openapi-dx.md`: Versão 2.8.0 com exemplos FastAPI e TypeScript.
+
+### `test(api-reference): assert formatted string on example response copy action`
+- **Razão da alteração:** Corrigir asserção desatualizada que verificava passagem de objeto JavaScript bruto para o clipboard em vez da string JSON formatada.
+- **Comportamento atual:** Teste unitário verifica fielmente a chamada a `copyToClipboard()` com o JSON serializado e formatado com 2 espaços de indentação.
+- **Decisões técnicas & ADRs:** Alinhamento de comportamento observável do usuário.
+- **Arquivos envolvidos:**
+  - `packages/api-reference/src/features/example-responses/ExampleResponses.test.ts`: Asserção corrigida.
+
 ---
 
 ## 5. Dívida Técnica & Próximos Passos
 
+- [ ] Sincronizar as atualizações no serviço consumidor `meucpb-backend`:
+  - Atualizar `app/static/scalar/scalar.config.js` removendo `proxyUrl: "https://proxy.scalar.com"` e definindo `model: "gemini-3.8-flash"`.
+  - Atualizar o header CSP em `app/main.py` eliminando referências a `proxy.scalar.com` e `api.scalar.com`.
+  - Copiar o bundle standalone recém-compilado para `app/static/scalar/standalone.js`.
+  - Atualizar `tests/test_scalar_docs.py` para refletir os novos valores de proxy e modelo.
 - [ ] Avaliar empacotamento de bundle offline para ícones SVG em ambientes 100% desconectados de CDN.
 - [ ] Executar pipeline de auditoria Playwright E2E em container isolado de CI.
