@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { normalizeHttpMethod } from './normalize-http-method'
-import { HTTP_METHODS } from './http-methods'
+import { describe, expect, it } from 'vitest'
+
 import { consoleWarnSpy } from '@/testing/console-spies'
+
+import { HTTP_METHODS } from './http-methods'
+import { normalizeHttpMethod } from './normalize-http-method'
 
 describe('normalizeHttpMethod', () => {
   describe('valid HTTP methods', () => {

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
 import { HTTP_METHODS, type HttpMethod, httpMethods } from './http-methods'
 
 describe('HTTP Methods', () => {

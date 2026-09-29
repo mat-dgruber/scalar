@@ -47,11 +47,18 @@ export const CLIENT_LS_KEYS = {
 } as const
 
 /** SSR safe alias for localStorage */
-export const safeLocalStorage = () =>
-  typeof window === 'undefined'
-    ? {
-        getItem: () => null,
-        setItem: () => null,
-        removeItem: () => null,
-      }
-    : localStorage
+export const safeLocalStorage = () => {
+  try {
+    if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined' && window.localStorage) {
+      return window.localStorage
+    }
+  } catch {
+    // localStorage unavailable or restricted in this environment
+  }
+
+  return {
+    getItem: () => null,
+    setItem: () => null,
+    removeItem: () => null,
+  }
+}
