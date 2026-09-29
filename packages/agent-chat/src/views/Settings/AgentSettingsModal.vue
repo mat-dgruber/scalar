@@ -25,6 +25,7 @@ import {
 } from '@/state/gemini-settings'
 
 const PRESET_MODELS: GeminiModel[] = [
+  'gemini-3.8-flash',
   'gemini-3.7-flash',
   'gemini-3.6-flash',
   'gemini-3.5-flash',
@@ -137,16 +138,7 @@ function handleCancel() {
               name="agent-provider"
               type="radio"
               value="gemini" />
-            <span>Google Gemini</span>
-          </label>
-          <label
-            class="providerOption border-border text-c-1 hover:bg-b-2 flex cursor-pointer items-center gap-2 rounded border px-3 py-2">
-            <input
-              v-model="provider"
-              name="agent-provider"
-              type="radio"
-              value="scalar" />
-            <span>Scalar Cloud</span>
+            <span>Google Gemini (BYOK / Self-Hosted)</span>
           </label>
         </div>
       </div>
@@ -205,9 +197,10 @@ function handleCancel() {
             class="border-border bg-b-1 text-c-1 focus:border-c-1 w-full rounded border px-3 py-2 outline-none"
             data-testid="gemini-model-select">
             <optgroup label="Frontier (3.x)">
-              <option value="gemini-3.7-flash">
-                gemini-3.7-flash (Recomendado/Padrão)
+              <option value="gemini-3.8-flash">
+                gemini-3.8-flash (Recomendado/Padrão)
               </option>
+              <option value="gemini-3.7-flash">gemini-3.7-flash</option>
               <option value="gemini-3.6-flash">gemini-3.6-flash</option>
               <option value="gemini-3.5-flash">gemini-3.5-flash</option>
               <option value="gemini-3.1-pro">gemini-3.1-pro</option>

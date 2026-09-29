@@ -38,7 +38,7 @@ const hasGeminiKey = computed(() => Boolean(storedConfig.value?.apiKey))
           class="bannerText">
           Gemini Conectado •
           <strong class="modelName">{{
-            storedConfig?.model || 'gemini-3.7-flash'
+            storedConfig?.model || 'gemini-3.8-flash'
           }}</strong>
         </span>
         <span

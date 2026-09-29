@@ -3,6 +3,29 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 
+let mockStore: Record<string, string> = {}
+const mockLocalStorage = {
+  getItem: (key: string) => mockStore[key] ?? null,
+  setItem: (key: string, value: string) => {
+    mockStore[key] = String(value)
+  },
+  removeItem: (key: string) => {
+    delete mockStore[key]
+  },
+  clear: () => {
+    mockStore = {}
+  },
+  get length() {
+    return Object.keys(mockStore).length
+  },
+  key: (i: number) => Object.keys(mockStore)[i] ?? null,
+}
+Object.defineProperty(globalThis, 'localStorage', {
+  value: mockLocalStorage,
+  writable: true,
+  configurable: true,
+})
+
 import {
   DEFAULT_GEMINI_MODEL,
   STORAGE_KEY_AGENT_PROVIDER,
@@ -23,12 +46,12 @@ describe('gemini-settings', () => {
   it('exports correct constants', () => {
     expect(STORAGE_KEY_GEMINI_CONFIG).toBe('scalar_agent_gemini_config')
     expect(STORAGE_KEY_AGENT_PROVIDER).toBe('scalar_agent_provider')
-    expect(DEFAULT_GEMINI_MODEL).toBe('gemini-3.7-flash')
+    expect(DEFAULT_GEMINI_MODEL).toBe('gemini-3.8-flash')
   })
 
-  it('defaults to gemini-3.7-flash when no config is stored or passed', () => {
+  it('defaults to gemini-3.8-flash when no config is stored or passed', () => {
     const config = getEffectiveGeminiConfig()
-    expect(config.model).toBe('gemini-3.7-flash')
+    expect(config.model).toBe('gemini-3.8-flash')
     expect(config.apiKey).toBeUndefined()
     expect(config.baseUrl).toBeUndefined()
   })
@@ -104,7 +127,7 @@ describe('gemini-settings', () => {
       apiKey: 'fallback-prop-key',
     })
     expect(config.apiKey).toBe('fallback-prop-key')
-    expect(config.model).toBe('gemini-3.7-flash')
+    expect(config.model).toBe('gemini-3.8-flash')
   })
 
   it('handles non-object JSON values in localStorage safely', () => {

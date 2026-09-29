@@ -2,7 +2,7 @@ import type { AgentProvider, GeminiConfig, GeminiModel } from '@scalar/types/api
 
 export const STORAGE_KEY_GEMINI_CONFIG = 'scalar_agent_gemini_config'
 export const STORAGE_KEY_AGENT_PROVIDER = 'scalar_agent_provider'
-export const DEFAULT_GEMINI_MODEL: GeminiModel = 'gemini-3.7-flash'
+export const DEFAULT_GEMINI_MODEL: GeminiModel = 'gemini-3.8-flash'
 
 /**
  * Reads and parses stored Agent Provider from localStorage.

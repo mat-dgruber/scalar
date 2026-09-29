@@ -245,7 +245,7 @@ export class GeminiChatTransport implements ChatTransport<UIMessage<any, any, an
     options: Parameters<ChatTransport<UIMessage<any, any, any>>['sendMessages']>[0],
   ): Promise<ReadableStream<UIMessageChunk>> {
     const rawApiKey = this.resolveOption(this.options.apiKey)
-    const rawModel = this.resolveOption(this.options.model) || 'gemini-3.7-flash'
+    const rawModel = this.resolveOption(this.options.model) || 'gemini-3.8-flash'
     const rawBaseUrl = this.resolveOption(this.options.baseUrl) || 'https://generativelanguage.googleapis.com'
     const rawSystemInstruction = this.resolveOption(this.options.systemInstruction)
     const rawTools = this.resolveOption(this.options.tools)

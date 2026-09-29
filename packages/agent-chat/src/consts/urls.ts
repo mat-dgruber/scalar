@@ -1,7 +1,7 @@
 export const URLS = {
-  DEFAULT_PROXY_URL: 'https://proxy.scalar.com',
-  PRIVACY_POLICY: 'https://scalar.com/legal/privacy-policy',
-  TERMS_AND_CONDITIONS: 'https://scalar.com/legal/terms-and-conditions',
-  AGENT_SCALAR_DOCUMENTATION: 'https://scalar.com/products/agent/getting-started',
-  PROXY_SOURCE_CODE: 'https://github.com/scalar/scalar/tree/main/projects/proxy-scalar-com',
+  DEFAULT_PROXY_URL: '',
+  PRIVACY_POLICY: '',
+  TERMS_AND_CONDITIONS: '',
+  AGENT_SCALAR_DOCUMENTATION: '',
+  PROXY_SOURCE_CODE: '',
 } as const

@@ -6,6 +6,29 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 
+let mockStore: Record<string, string> = {}
+const mockLocalStorage = {
+  getItem: (key: string) => mockStore[key] ?? null,
+  setItem: (key: string, value: string) => {
+    mockStore[key] = String(value)
+  },
+  removeItem: (key: string) => {
+    delete mockStore[key]
+  },
+  clear: () => {
+    mockStore = {}
+  },
+  get length() {
+    return Object.keys(mockStore).length
+  },
+  key: (i: number) => Object.keys(mockStore)[i] ?? null,
+}
+Object.defineProperty(globalThis, 'localStorage', {
+  value: mockLocalStorage,
+  writable: true,
+  configurable: true,
+})
+
 import { DEFAULT_GEMINI_MODEL, loadStoredGeminiConfig, saveStoredGeminiConfig } from '../../state/gemini-settings'
 import AgentSettingsModal from './AgentSettingsModal.vue'
 
@@ -39,7 +62,6 @@ describe('AgentSettingsModal', () => {
     await flushPromises()
 
     expect(document.body.textContent).toContain('Google Gemini')
-    expect(document.body.textContent).toContain('Scalar Cloud')
 
     const link = document.body.querySelector('a[href="https://aistudio.google.com/app/apikey"]')
     expect(link).not.toBeNull()
@@ -283,7 +305,7 @@ describe('AgentSettingsModal', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
-  it('allows switching provider between Google Gemini and Scalar Cloud', async () => {
+  it('allows configuring Google Gemini BYOK provider', async () => {
     const modalState = useModal()
     modalState.show()
 
@@ -295,20 +317,9 @@ describe('AgentSettingsModal', () => {
     })
     await flushPromises()
 
-    const scalarCloudRadio = document.body.querySelector('input[value="scalar"]') as HTMLInputElement
-    expect(scalarCloudRadio).not.toBeNull()
-    scalarCloudRadio.checked = true
-    scalarCloudRadio.dispatchEvent(new Event('change'))
-    await nextTick()
-
-    expect(document.body.querySelector('input[data-testid="gemini-api-key-input"]')).toBeNull()
-
     const geminiRadio = document.body.querySelector('input[value="gemini"]') as HTMLInputElement
     expect(geminiRadio).not.toBeNull()
-    geminiRadio.checked = true
-    geminiRadio.dispatchEvent(new Event('change'))
-    await nextTick()
-
+    expect(geminiRadio.checked).toBe(true)
     expect(document.body.querySelector('input[data-testid="gemini-api-key-input"]')).not.toBeNull()
   })
 })
